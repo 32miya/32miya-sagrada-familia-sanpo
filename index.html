@@ -98,6 +98,11 @@ body.touchui #actBtn{bottom:calc(env(safe-area-inset-bottom,0px) + 290px)}
 #card dd{margin:0}
 #card .x{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:18px;line-height:1}
 .card-nav{display:flex;gap:8px;margin-top:14px}
+#cGo{width:100%;height:44px;margin-top:14px;border-radius:10px;border:0;background:var(--shu);color:#fff;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.06em}
+#navBar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 92px);left:calc(env(safe-area-inset-left,0px) + 14px);z-index:5;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;border-radius:12px;border:1px solid rgba(255,176,80,.7);background:var(--panel);max-width:calc(100% - 170px)}
+#navBar .t{display:flex;flex-direction:column;min-width:0}#navBar small{font-size:10px;color:var(--mute);letter-spacing:.14em}#navBar b{font-family:var(--f-disp);font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#navBar span{font-size:12px;color:#ffc070}
+#navX{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:transparent;cursor:pointer;flex:none}
+body.photo #navBar{display:none!important}
 .card-nav button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:13px}
 #spotsBtn{font-weight:700;cursor:pointer}
 #spotsBtn::before{content:"";width:7px;height:7px;background:var(--shu2);transform:rotate(45deg)}
@@ -194,6 +199,7 @@ body.lift #pad .pbase#stickBase,body.lift #runBtn,body.lift #poi{display:none!im
 
 <button id="poi" hidden><span class="dia"></span><span class="nm" id="poiName"></span><span class="go">解説</span></button>
 <div id="hint" hidden></div>
+<div id="navBar" hidden><div class="t"><small>道案内</small><b id="navName"></b><span id="navDist"></span></div><button id="navX" aria-label="案内をやめる">×</button></div>
 <button id="actBtn" hidden></button>
 <div id="toast"><div class="f" id="toastF"></div><small id="toastS"></small></div>
 <div id="seal"><div class="in"><span>SAGRADA FAMÍLIA</span><i>✠</i><b>登塔の印</b><span id="sealD"></span></div></div>
@@ -204,6 +210,7 @@ body.lift #pad .pbase#stickBase,body.lift #runBtn,body.lift #poi{display:none!im
   <h2 id="cName"></h2>
   <p id="cText"></p>
   <dl id="cMeta"></dl>
+  <button id="cGo">ここまで歩いて案内する</button>
   <div class="card-nav"><button id="cPrev">◀ 前へ</button><button id="cNext">次へ ▶</button></div>
 </section>
 
@@ -214,7 +221,7 @@ body.lift #pad .pbase#stickBase,body.lift #runBtn,body.lift #poi{display:none!im
     <div class="mapframe" id="mapFrame"><canvas id="mapC"></canvas><div class="me" id="meDot"></div></div>
     <div class="spotlist" id="spotList"></div>
   </div>
-  <div class="note">ピンか一覧をタップすると、その場所へ移動します（移動した先では見どころ札はもらえません。いったん離れて歩いてたどり着いてください）。</div>
+  <div class="note">ピンをタップするとその場所へ移動します（移動した先では札はもらえません）。一覧をタップすると解説が開き、「ここまで歩いて案内する」で光の印が道を示します。</div>
 </section>
 
 <section id="story" class="ovl" hidden>
@@ -694,7 +701,7 @@ function bellTower(o){ o.hb=o.hb||20; o.hp=o.H*.76; const K=o.kind, lou='lou'+K,
   bk(lou).add(g,TM(o.x,0,o.z));
   // 輪の帯
   for(const y of [o.hb,o.hb+(o.hp-o.hb)*.33,o.hb+(o.hp-o.hb)*.66]) if(y<topY) bk(base).add(new THREE.TorusGeometry(towerR(o,y)+.12,.22,6,28),TM(o.x,y,o.z,0,1,1,1,PI/2));
-  if(o.climb) collideRing(o.x,o.z,2.62,.25,-1,o.H*.7,o.gaps); else collideCyl(o.x,o.z,rb,-1,o.hb);
+  if(o.climb){ collideRing(o.x,o.z,2.62,.25,-1,o.H*.7,o.gaps); collideRing(o.x,o.z,rb-.15,.3,-1,o.hb,[[PI-.5,PI+.5,-1,2.6]]); } else collideCyl(o.x,o.z,rb,-1,o.hb);
   if(o.partial){ // 1926年の建設途中：上に足場
     for(let k=0;k<10;k++){ const a=k/10*TAU, r=towerR(o,topY)+.8; strut('scaff',[o.x+Math.cos(a)*r,topY-8,o.z+Math.sin(a)*r],[o.x+Math.cos(a)*r,topY+4,o.z+Math.sin(a)*r],.06); }
     for(const y of [topY-6,topY-2,topY+2]) bk('scaff').add(new THREE.TorusGeometry(towerR(o,topY)+.8,.05,4,20),TM(o.x,y,o.z,0,1,1,1,PI/2));
@@ -896,7 +903,7 @@ function mergeGeo(items){ let n=0; const gs=items.map(([geo,m])=>{ let g=geo.ind
    地下聖堂（クリプタ）とガウディの墓 — 1882年に着工、ガウディの時代から
    ============================================================ */
 const CRY={x0:-13,x1:13,z0:-34,z1:-10,y:-6.5,h:-.7};
-const STAIR={x0:-29.5,x1:-26.5,z0:-30.5,z1:-19};
+const STAIR={x0:-29.5,x1:-26.5,z0:-44,z1:-34}; // 北の端が地上の入口、南へ下りて通路へ
 TX.tomb=(()=>{ const W=512,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); noiseFill(g,W,H,'#d8d0c0','#b8ae9c',30,4); g.fillStyle='#3a2a1a'; g.textAlign='center'; g.font='bold 34px serif'; g.fillText('ANTONIUS GAUDI CORNET',W/2,62); g.font='26px serif'; g.fillText('REUSENSIS',W/2,104); g.font='20px serif'; g.fillText('· TEMPLI AUCTOR ·',W/2,146); g.fillText('OBIIT BARCINONE DIE X JUNII',W/2,180); g.font='bold 26px serif'; g.fillText('MCMXXVI',W/2,222); return toTex(c); })();
 M.tomb=std({map:TX.tomb,roughness:.6}); OWNUV.tomb=1;
 inEra('26nk',()=>{ const {x0,x1,z0,z1,y,h}=CRY;
@@ -915,13 +922,13 @@ inEra('26nk',()=>{ const {x0,x1,z0,z1,y,h}=CRY;
   // ガウディの墓（カルメンの聖母の礼拝堂）
   { const a=PI*1.62, x=Math.cos(a)*8.4, z=z0+Math.sin(a)*8.4; bk('tomb').add(PLANE,TM(x,y+.04,z,-a+PI/2,2.6,1.3,1,-PI/2)); bk('gold').add(new THREE.TorusGeometry(.9,.04,6,20),TM(x,y+.06,z,0,1,1,1,PI/2)); window.TOMB={x,z,y}; for(let k=0;k<6;k++) bk('candle').add(CYL8,TM(x+Math.cos(k)*1.6,y+.3,z+Math.sin(k)*1.1,0,.04,.5,.04)); boxAt('iron',x-1.6,x+1.6,y,y+.9,z-.06+.9,z+.06+.9); }
   // 通路と階段
-  slab(-29.5,-13,-34,-30.5,y); boxAt('floorIn',-29.5,-13,y-.3,y,-34,-30.5); boxAt('sandL',-30,-13,h,h+.4,-34.5,-30); wallSeg('x',-34.25,-29.5,-13,y,h,.5,'sandL',[]); wallSeg('x',-30.25,-26.5,-13,y,h,.5,'sandL',[]); collide(-30,-13,-34.6,-34,y,h); collide(-26.4,-13,-30.5,-30,y,h); solidBox('sandL',-30,-29.5,y,h,-34.5,-30.5);
-  RAMPS.push({x0:STAIR.x0,x1:STAIR.x1,z0:STAIR.z0,z1:STAIR.z1,ya:y,yb:0,ax:'z',g:BG}); HOLES.push(Object.assign({g:BG},STAIR));
-  { const n=34; for(let i=0;i<n;i++){ const z=STAIR.z0+(STAIR.z1-STAIR.z0)*i/n, yy=y+(0-y)*i/n; boxAt('oldB',STAIR.x0,STAIR.x1,yy-.3,yy+.0,z,z+(STAIR.z1-STAIR.z0)/n+.02); } }
-  for(const x of [STAIR.x0-.15,STAIR.x1+.15]){ const ze=x<STAIR.x0?STAIR.z1+3:STAIR.z1; boxAt('sandL',x-.15,x+.15,y,1.05,STAIR.z0,ze); collide(x-.15,x+.15,STAIR.z0,ze,-99,1.05); }
-  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,.05,.2,STAIR.z1,STAIR.z1+3); // 地上の入口（東から入る）
-  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,-2,1.05,STAIR.z0-.3,STAIR.z0); collide(STAIR.x0-.3,STAIR.x1+.3,STAIR.z0-.3,STAIR.z0,-1.5,1.05);
-  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,h,0,-34.5,STAIR.z0); // 地上の床（通路の上）
+  slab(-29.5,-13,-34,-30.5,y); boxAt('floorIn',-29.5,-13,y-.3,y,-34,-30.5); boxAt('sandL',-30,-13,h,h+.4,-34.5,-30); wallSeg('x',-34.25,-26.5,-13,y,h,.5,'sandL',[]); wallSeg('x',-30.25,-29.5,-13,y,h,.5,'sandL',[]); collide(-26.5,-13,-34.6,-34,y,h); collide(-29.5,-13,-30.5,-30,y,h); solidBox('sandL',-30,-29.5,y,h,-34.5,-30.5);
+  RAMPS.push({x0:STAIR.x0,x1:STAIR.x1,z0:STAIR.z0,z1:STAIR.z1,ya:0,yb:y,ax:'z',g:BG}); HOLES.push(Object.assign({g:BG},STAIR));
+  { const n=34; for(let i=0;i<n;i++){ const z=STAIR.z0+(STAIR.z1-STAIR.z0)*i/n, yy=y*(i+.5)/n; boxAt('oldB',STAIR.x0,STAIR.x1,yy-.3,yy+.0,z,z+(STAIR.z1-STAIR.z0)/n+.02); } }
+  for(const x of [STAIR.x0-.15,STAIR.x1+.15]){ boxAt('sandL',x-.15,x+.15,y,1.05,STAIR.z0,STAIR.z1); collide(x-.15,x+.15,STAIR.z0,STAIR.z1,-99,1.05); }
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,.05,.2,STAIR.z0-2.5,STAIR.z0); // 地上の入口（北から入る）
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,-2,1.05,STAIR.z1,STAIR.z1+.3); collide(STAIR.x0-.3,STAIR.x1+.3,STAIR.z1,STAIR.z1+.3,-1.5,1.05);
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,h,0,STAIR.z1,-30.5); // 地上の床（踊り場の上）
 });
 
 /* ============================================================
@@ -941,7 +948,7 @@ inEra('26nk',()=>{ const cx=-43, cz=47, L=20, Wd=10, H=5;
    1926年：ガウディの工房と石材置き場
    ============================================================ */
 inEra('26',()=>{
-  for(const [x,z,w,d,h] of [[-42,-40,16,9,7],[-24,-44,12,7,5],[-46,-22,8,12,5],[22,-44,14,8,5]]){ solidBox('plank',x-w/2,x+w/2,0,h,z-d/2,z+d/2); gable('roof',x-w/2-.4,x+w/2+.4,z-d/2-.4,z+d/2+.4,h,2.2,'x'); }
+  for(const [x,z,w,d,h] of [[-42,-40,16,9,7],[-46,-4,8,10,4],[-46,-22,8,12,5],[22,-44,14,8,5]]){ solidBox('plank',x-w/2,x+w/2,0,h,z-d/2,z+d/2); gable('roof',x-w/2-.4,x+w/2+.4,z-d/2-.4,z+d/2+.4,h,2.2,'x'); }
   for(let k=0;k<70;k++){ const x=R(-20,20), z=R(8,50), w=R(.8,2), h=R(.5,1.4); if(Math.abs(x)<3) continue; boxAt(pick(['sand','sandL','grey']),x-w/2,x+w/2,0,h,z-w*.4,z+w*.4); }
   for(const [x,z] of [[0,24],[-10,40],[12,36]]){ strut('wood',[x,0,z],[x,22,z],.25); strut('wood',[x,22,z],[x+12,16,z+3],.15); strut('wood',[x,22,z],[x-4,0,z+5],.12); strut('wood',[x,22,z],[x+3,0,z-5],.12); strut('iron',[x+11,16,z+3],[x+11,4,z+3],.02); }
   // 板塀
@@ -1070,7 +1077,7 @@ function tapable(obj,who,lines){ obj.userData.tap={who,lines}; TAPS.push(obj); }
 function npc(x,z,ry,col,hat){ const g=new THREE.Group(); const m=std({color:col,roughness:.8}); const b=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,1.05,10),m); b.position.y=.98; g.add(b); for(const s of [-1,1]){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.5,6),std({color:'#2a2a30'})); l.position.set(s*.09,.25,0); g.add(l); } const h=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),std({color:'#e8c8a8',roughness:.7})); h.position.y=1.62; g.add(h); if(hat){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.08,12),std({color:hat})); c.position.y=1.72; g.add(c); } g.position.set(x,0,z); g.rotation.y=ry; g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; }
 { const gd=npc(44,-5,PI/2,'#2a4a7a'); eg('nk').add(gd); tapable(gd,'案内係',['ようこそ、サグラダ・ファミリアへ。正式には「聖家族贖罪教会」といいます。','この生誕のファサードは、ガウディが生きているうちにほぼ形になった唯一のファサードです。','3つの門は、左から希望・慈愛・信仰。中央の門の上の緑の木は、生命の樹の糸杉です。','塔に上るなら、中に入って右（北）の奥のエレベーターへ。帰りは螺旋階段で下りられます。','門を分ける柱の足元を見てください。海側は海亀、山側は陸亀が柱を支えています。','中央の扉は日本人彫刻家・外尾悦郎さんの作品。植物と虫がたくさん隠れています。']);
   const g2=npc(-3,-11,PI,'#6a2a2a'); eg('nk').add(g2); tapable(g2,'教会の係員',['頭上の天蓋には50の灯りと、ブドウと麦の穂の飾りがあります。','この柱は赤い斑岩。交差部の4本は、4人の福音書記者を表しています。','真上は高さ60m。その上にイエス・キリストの塔が立っています。']);
-  const g3=npc(-24.2,-17.6,-PI/2,'#4a4a52'); eg('26nk').add(g3); tapable(g3,'墓守',['この階段の下が地下聖堂です。1882年、ここから工事が始まりました。','ガウディは1926年6月10日に亡くなり、この地下のカルメンの聖母の礼拝堂に眠っています。']);
+  const g3=npc(-25.2,-45.2,PI*.25,'#4a4a52'); eg('26nk').add(g3); tapable(g3,'墓守',['この階段の下が地下聖堂です。1882年、ここから工事が始まりました。','ガウディは1926年6月10日に亡くなり、この地下のカルメンの聖母の礼拝堂に眠っています。']);
   const g4=npc(-38,-34,PI*.7,'#8a7a5a','#3a3028'); eg('26').add(g4); tapable(g4,'石工',['ガウディ先生は、ここの工房で模型を作り続けておられた。','「私の依頼主は急いでいない」——先生はそう言っていたそうだ。','この教会が完成するのは、何十年、いや何百年先かもしれんな。']);
   const g5=npc(36.5,-1.5,-PI/2,'#2a4a7a'); g5.position.y=65; eg('nk').add(g5); tapable(g5,'塔の係員',['ここは高さ65m。正面に見えるのが東の地中海、右手の丘がモンジュイックです。','碁盤目の街はアシャンプラ。角を切り落とした八角形の街区が、19世紀の計画どおりに並んでいます。','帰りは、南側の塔の螺旋階段から下りられます。中心が吹き抜けなので、のぞいてみてください。']);
 }
@@ -1137,7 +1144,7 @@ const SPOTS=[
   {id:'altar',era:'nk',name:'主祭壇と天蓋',kana:'しゅさいだんとてんがい',x:0,z:-11,r:6,lvl:'in',text:'後陣の前の主祭壇。上に吊られた七角形の天蓋には、ブドウと麦の穂の飾りと50の灯りがあり、その下に十字架のキリストが浮かびます。後陣の天井は75mで、その真上が聖母マリアの塔です。',meta:[['後陣の天井','75m'],['見どころ','天蓋・後陣の黄金色の窓']]},
   {id:'este',era:'nk',name:'東の窓（青と緑）',kana:'ひがしのまど',x:18,z:30,r:6,lvl:'in',text:'生誕の側（東）のステンドグラスは、朝日を受ける青と緑の冷たい色。ジュアン・ビラ＝グラウのデザインで、上へ行くほど透明に近づき、たくさんの光を取り込みます。時刻を「朝」にすると、色の光の筋が床まで届きます。',meta:[['おすすめの時刻','朝']]},
   {id:'oeste',era:'nk',name:'西の窓（赤と橙）',kana:'にしのまど',x:-18,z:30,r:6,lvl:'in',text:'受難の側（西）は、夕日を受ける赤・橙・黄の暖かい色。午後になると、色の光が柱と床を染めていきます。時刻を「夕」にしてみましょう。',meta:[['おすすめの時刻','夕']]},
-  {id:'cripta',era:'26nk',name:'地下聖堂とガウディの墓',kana:'ちかせいどう',x:0,z:-30,r:8,lvl:'B1',text:'1882年、最初に工事が始まった場所。前任のビリャールの設計を引き継いで、ガウディが完成させました。1926年6月10日に亡くなったガウディは、ここカルメンの聖母の礼拝堂に葬られています。墓石のラテン語には「この教会の作り手」と刻まれています。',meta:[['入口','後陣の西の外の階段'],['世界遺産','2005年']]},
+  {id:'cripta',era:'26nk',name:'地下聖堂とガウディの墓',kana:'ちかせいどう',x:0,z:-30,r:8,lvl:'B1',text:'1882年、最初に工事が始まった場所。前任のビリャールの設計を引き継いで、ガウディが完成させました。1926年6月10日に亡くなったガウディは、ここカルメンの聖母の礼拝堂に葬られています。墓石のラテン語には「この教会の作り手」と刻まれています。',meta:[['入口','後陣の北西、プロベンサ通り側の階段'],['世界遺産','2005年']]},
   {id:'puente',era:'nk',name:'生誕の塔の橋',kana:'せいたんのとうのはし',x:34,z:0,r:4.2,lvl:'tower',text:'生誕のファサードの2本の鐘塔を結ぶ、高さ65mの橋。目の前に塔の頂のモザイク、足下にバルセロナの碁盤目の街アシャンプラ、遠くには地中海とモンジュイックの丘が見えます。',meta:[['高さ','65m'],['帰り','南の塔の螺旋階段で下りる（エレベーターでも可）']]},
   {id:'espiral',era:'nk',name:'螺旋階段',kana:'らせんかいだん',x:34,z:7,r:2.6,lvl:'tower',text:'鐘塔の中の、巻き貝のような螺旋階段。中心が吹き抜けになっていて、のぞき込むと渦のように見えます。羽板のすき間から、ときどき街が見えます。',meta:[['ひとこと','走ると早く下りられる']]},
 ];
@@ -1167,6 +1174,7 @@ let curCard=-1;
 function visSpots(){ return SPOTS.map((s,i)=>i).filter(i=>spotOn(SPOTS[i])); }
 function openCard(i){ const s=SPOTS[i]; curCard=i; $('cKana').textContent=s.kana; $('cName').textContent=s.name; $('cText').textContent=s.text; $('cMeta').innerHTML=s.meta.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')+`<dt>札</dt><dd>${GOT[s.id]?'受け取り済み':'まだ（歩いて訪れると受け取れます）'}</dd>`; ui.card.hidden=false; }
 $('cardX').onclick=()=>{ ui.card.hidden=true; };
+$('cGo').onclick=()=>{ if(curCard>=0) navStart(curCard); }; $('navX').onclick=()=>navStop();
 $('cPrev').onclick=()=>{ const v=visSpots(); const k=v.indexOf(curCard); openCard(v[(k+v.length-1)%v.length]); }; $('cNext').onclick=()=>{ const v=visSpots(); const k=v.indexOf(curCard); openCard(v[(k+1)%v.length]); };
 let nearSpot=-1; ui.poi.onclick=()=>{ if(nearSpot>=0) openCard(nearSpot); };
 // メニュー
@@ -1214,7 +1222,7 @@ function drawLevel(lv){ const B=MAPB[lv]; const W=540, H=Math.round(W*(B.z1-B.z0
     g.fillStyle='#e8c060'; g.fillRect(X(-5),Z(-19.5),10*sx,6*sx); g.fillStyle='#f0a050'; for(const T of [LIFT,SPIRAL]){ g.beginPath(); g.arc(X(T.x),Z(T.z),3*sx,0,TAU); g.fill(); }
     g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(11*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('身廊',X(0),Z(58)); g.fillText('生誕の門',X(40),Z(0)); g.fillText('受難の門',X(-36),Z(-26)); g.fillText('後陣',X(0),Z(-44)); g.fillText('エレベーター',X(LIFT.x),Z(LIFT.z-4)); g.fillText('螺旋階段',X(SPIRAL.x),Z(SPIRAL.z+5)); }
   else if(lv==='B1'){ g.fillStyle='#4a443c'; g.fillRect(X(CRY.x0),Z(CRY.z0),(CRY.x1-CRY.x0)*sx,(CRY.z1-CRY.z0)*sx); g.beginPath(); g.arc(X(0),Z(CRY.z0),10*sx,PI,TAU); g.fill(); g.fillRect(X(-29.5),Z(-34),16.5*sx,3.5*sx); g.fillStyle='rgba(240,160,80,.45)'; g.fillRect(X(STAIR.x0),Z(STAIR.z0),3*sx,(STAIR.z1-STAIR.z0)*sx);
-    g.fillStyle='#e8c060'; if(window.TOMB){ g.beginPath(); g.arc(X(TOMB.x),Z(TOMB.z),1.2*sx,0,TAU); g.fill(); } g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(12*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('ガウディの墓',X(TOMB.x),Z(TOMB.z-2.4)); g.fillText('階段（地上へ）',X(-28),Z(-16.5)); }
+    g.fillStyle='#e8c060'; if(window.TOMB){ g.beginPath(); g.arc(X(TOMB.x),Z(TOMB.z),1.2*sx,0,TAU); g.fill(); } g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(12*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('ガウディの墓',X(TOMB.x),Z(TOMB.z-2.4)); g.fillText('階段（地上へ）',X(-28),Z(-46)); }
   else { g.fillStyle='#4a443c'; for(const t of NT){ g.beginPath(); g.arc(X(34),Z(t.z),3.2*sx,0,TAU); g.fill(); } g.fillStyle='#8a7a64'; g.fillRect(X(33.1),Z(-4.6),1.8*sx,9.2*sx); g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(12*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('橋（65m）',X(40),Z(0)); g.fillText('エレベーター',X(42),Z(-7)); g.fillText('螺旋階段',X(42),Z(7)); }
   return {c,B,sx,W,H}; }
 let mapLv='out';
@@ -1226,9 +1234,9 @@ function drawMap(){ const key=mapLv+ERA; const L=LVCAN[key]||(LVCAN[key]=drawLev
   const me=$('meDot'); if(lvlOf(P.x,P.y,P.z)===mapLv){ me.hidden=false; me.style.left=((P.x-L.B.x0)/(L.B.x1-L.B.x0)*100)+'%'; me.style.top=((P.z-L.B.z0)/(L.B.z1-L.B.z0)*100)+'%'; } else me.hidden=true;
   $('spotList').innerHTML=SPOTS.map((s,i)=>s.lvl===mapLv&&spotOn(s)?`<button data-i="${i}"><b>${s.name}</b><small>${GOT[s.id]?'札 ✓':'札 未'}</small></button>`:'').join(''); }
 $('lvTabs').onclick=e=>{ if(e.target.dataset.k){ mapLv=e.target.dataset.k; drawMap(); } };
-$('spotList').onclick=e=>{ const b=e.target.closest('button'); if(b) warpSpot(+b.dataset.i); };
+$('spotList').onclick=e=>{ const b=e.target.closest('button'); if(b){ $('map').hidden=true; openCard(+b.dataset.i); } };
 $('mini').onclick=openMap; $('mapX').onclick=()=>{ $('map').hidden=true; };
-function warpTo(x,y,z,yaw){ LIFTA=null; document.body.classList.remove('lift'); P.x=x; P.z=z; P.y=y; P.vy=0; if(yaw!=null) P.yaw=yaw; P.y=Math.max(surfaceAt(x,z,y+.3),y); }
+function warpTo(x,y,z,yaw){ LIFTA=null; if(typeof NAV!=='undefined'&&NAV.i>=0) NAV.recalc=0, NAV.path=null; document.body.classList.remove('lift'); P.x=x; P.z=z; P.y=y; P.vy=0; if(yaw!=null) P.yaw=yaw; P.y=Math.max(surfaceAt(x,z,y+.3),y); }
 const WARPAT={ike:[96,0,-6,PI/2+.2],nacimiento:[50,0,0,PI/2],sotoo:[34,0,0,PI/2],pasion:[-54,0,0,-PI/2],gloria:[0,0,80,0],abside:[0,0,-56,PI],escoles:[-43,0,62,0],plaza:[-108,0,18,-PI/2],taller:[-40,0,-28,PI],nave:[0,0,44,0],crucero:[0,0,10,0],altar:[0,0,-6,0],este:[12,0,30,-PI/2],oeste:[-12,0,30,PI/2],cripta:[-8,-6.5,-24,PI*.5],puente:[34,65,-2,0],espiral:[34,65,3.6,0]};
 function warpSpot(i){ const s=SPOTS[i]; const w=WARPAT[s.id]; warpTo(w[0],w[1],w[2],w[3]); P.pitch=s.lvl==='in'?.25:.05; warpGuard=s.id; $('map').hidden=true; say('','移動しました。この場所の札は、いったん離れて歩いて訪れると受け取れます。',3.5); }
 // ミニマップ
@@ -1236,6 +1244,7 @@ const miniC=$('miniC'), mg=miniC.getContext('2d');
 function drawMini(){ const lv=lvlOf(P.x,P.y,P.z); const key=lv+ERA; const L=LVCAN[key]||(LVCAN[key]=drawLevel(lv)); const W=216, scale={out:1.4,in:3.2,B1:4,tower:5}[lv]; const k=scale/L.sx;
   mg.fillStyle='#1a1816'; mg.fillRect(0,0,W,W); mg.save(); mg.translate(W/2,W/2); mg.scale(k,k); mg.translate(-(P.x-L.B.x0)*L.sx,-(P.z-L.B.z0)*L.sx); mg.drawImage(L.c,0,0); mg.restore();
   mg.fillStyle='#f08a3a'; for(const s of SPOTS){ if(s.lvl!==lv||!spotOn(s)) continue; const dx=(s.x-P.x)*scale+W/2, dz=(s.z-P.z)*scale+W/2; if(dx<0||dx>W||dz<0||dz>W) continue; mg.save(); mg.translate(dx,dz); mg.rotate(PI/4); mg.fillRect(-4,-4,8,8); mg.restore(); }
+  navMini(lv,scale,W);
   mg.save(); mg.translate(W/2,W/2); mg.rotate(-P.yaw); mg.fillStyle='#fff'; mg.beginPath(); mg.moveTo(0,-11); mg.lineTo(7,8); mg.lineTo(0,4); mg.lineTo(-7,8); mg.closePath(); mg.fill(); mg.restore(); }
 
 /* ============================================================
@@ -1360,6 +1369,7 @@ function step(dt,t){
   if(!firstIn&&lv==='in'){ firstIn=true; say('','見上げてみよう——柱が枝分かれして、天井に光の森が広がっています（「見上げ」ボタン）。',7); }
   if(!firstCrypt&&lv==='B1'){ firstCrypt=true; say('','地下聖堂。1882年、すべてはここから始まりました。北の奥の礼拝堂に、ガウディの墓があります。',7); }
   if(lv==='tower'&&!firstTower&&Math.abs(P.z)<4.6&&Math.abs(P.x-34)<1.2&&P.y>64){ firstTower=true; showSeal(); }
+  navUpdate(dt,t);
   // 見どころ・札
   let ns=-1, nd=1e9; SPOTS.forEach((sp,i)=>{ if(sp.lvl!==lv||!spotOn(sp)) return; const dsp=Math.hypot(P.x-sp.x,P.z-sp.z); if(dsp<sp.r&&dsp<nd){ nd=dsp; ns=i; } if(warpGuard===sp.id&&dsp>sp.r+3) warpGuard=null;
     if(dsp<sp.r*.8&&!GOT[sp.id]&&warpGuard!==sp.id){ GOT[sp.id]=1; saveGot(); updFuda(); toast(sp.name,'見どころ札を受け取った'); SND.chime(); } });
@@ -1387,6 +1397,90 @@ requestAnimationFrame(loop);
 $('load').hidden=true;
 $('goBtn').disabled=false; $('goBtn').textContent='ガウディ広場から歩く';
 $('goBtn').onclick=()=>{ START=false; $('start').hidden=true; SND.init(); SND.setOn(SOUND); warpTo(START_POS.x,0,START_POS.z,START_POS.yaw); P.pitch=.2; say('','正面が生誕のファサード。まっすぐ進んで横断歩道を渡れば、中央の慈愛の門から聖堂の中へ入れます。',7); setTimeout(()=>SND.bell(.5),800); };
+
+/* ============================================================
+   道案内：見どころまで歩く経路を探して、足元に光の印を並べる
+   （地上・地下聖堂・塔の上の3層。塔へはエレベーター、地下へは階段）
+   ============================================================ */
+const layerOfY=y=>y<-3?1:y>12?2:0;
+const LAYER_OF_LVL={out:0,in:0,B1:1,tower:2};
+function navFind(sx,sz,sy,tx,tz,tl,tr){
+  const S=.5, ls=layerOfY(sy);
+  let x0=Math.min(sx,tx),x1=Math.max(sx,tx),z0=Math.min(sz,tz),z1=Math.max(sz,tz);
+  if((ls===2)!==(tl===2)){ x0=Math.min(x0,LIFT.x); x1=Math.max(x1,LIFT.x); z0=Math.min(z0,LIFT.z); z1=Math.max(z1,LIFT.z); }
+  if(ls===1||tl===1){ x0=Math.min(x0,-31); x1=Math.max(x1,14); z0=Math.min(z0,-46); z1=Math.max(z1,-14); }
+  x0=Math.floor(x0-30); x1=Math.ceil(x1+30); z0=Math.floor(z0-30); z1=Math.ceil(z1+30);
+  const nx=Math.round((x1-x0)/S)+1, nz=Math.round((z1-z0)/S)+1, N=nx*nz;
+  const G=new Float32Array(3*N).fill(1e9), PR=new Int32Array(3*N).fill(-1), Y=new Float32Array(3*N), CL=new Uint8Array(3*N);
+  const cx=i=>x0+i*S, cz=j=>z0+j*S;
+  const si=Math.round((sx-x0)/S), sj=Math.round((sz-z0)/S); const s0=ls*N+sj*nx+si;
+  const li=Math.round((LIFT.x-x0)/S), lj=Math.round((LIFT.z-z0)/S);
+  const hx=(x,z,l)=>{ let d=Math.hypot(x-tx,z-tz); if(l!==tl&&(l===2||tl===2)) d=Math.hypot(x-LIFT.x,z-LIFT.z)+Math.hypot(LIFT.x-tx,LIFT.z-tz); return d; };
+  // 二分ヒープ
+  const H=[], HF=[]; const push=(n,f)=>{ H.push(n); HF.push(f); let i=H.length-1; while(i>0){ const p=(i-1)>>1; if(HF[p]<=HF[i]) break; [H[p],H[i]]=[H[i],H[p]]; [HF[p],HF[i]]=[HF[i],HF[p]]; i=p; } };
+  const pop=()=>{ const n=H[0], ln=H.pop(), lf=HF.pop(); if(H.length){ H[0]=ln; HF[0]=lf; let i=0; for(;;){ const l=2*i+1,r=l+1; let m=i; if(l<H.length&&HF[l]<HF[m]) m=l; if(r<H.length&&HF[r]<HF[m]) m=r; if(m===i) break; [H[m],H[i]]=[H[i],H[m]]; [HF[m],HF[i]]=[HF[i],HF[m]]; i=m; } } return n; };
+  G[s0]=0; Y[s0]=sy; push(s0,hx(sx,sz,ls));
+  const DIRS=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,1.414],[1,-1,1.414],[-1,1,1.414],[-1,-1,1.414]];
+  const noStair=ls!==1&&tl!==1;
+  const stepOK=(x,z,y,dx,dz)=>{ let yy=y; for(let s=1;s<=2;s++){ const ax=x+dx*s/2, az=z+dz*s/2; if(blocked(ax,az,yy)) return null; const sf=surfaceAt(ax,az,yy); if(sf<-1e8||sf<yy-1.2) return null; yy=sf; } if(noStair&&yy<-.4) return null; return yy; };
+  let goal=-1, it=0;
+  while(H.length&&it++<220000){ const n=pop(); if(CL[n]) continue; CL[n]=1; const l=(n/N)|0, c=n-l*N, i=c%nx, j=(c-i)/nx, x=cx(i), z=cz(j), y=Y[n];
+    if(l===tl&&Math.hypot(x-tx,z-tz)<=tr){ goal=n; break; }
+    for(const [di,dj,w] of DIRS){ const a=i+di,b=j+dj; if(a<0||b<0||a>=nx||b>=nz) continue;
+      if(di&&dj){ if(stepOK(x,z,y,di*S,0)==null||stepOK(x,z,y,0,dj*S)==null) continue; }
+      const yy=stepOK(x,z,y,di*S,dj*S); if(yy==null) continue; const l2=layerOfY(yy); const n2=l2*N+b*nx+a; if(CL[n2]) continue;
+      const ax=cx(a),az=cz(b); const tight=blocked(ax+.7,az,yy)||blocked(ax-.7,az,yy)||blocked(ax,az+.7,yy)||blocked(ax,az-.7,yy);
+      const g=G[n]+w*S*(tight?2.2:1); if(g<G[n2]){ G[n2]=g; PR[n2]=n; Y[n2]=yy; push(n2,g+hx(cx(a),cz(b),l2)); } }
+    // エレベーター（地上⇄65m）
+    if(ERA!=='26'&&Math.abs(i-li)<=2&&Math.abs(j-lj)<=2){ const toL=l===2?0:2, yy=l===2?0:LIFT.top; const n2=toL*N+lj*nx+li; if(!CL[n2]&&G[n]+12<G[n2]){ G[n2]=G[n]+12; PR[n2]=n; Y[n2]=yy; push(n2,G[n2]+hx(LIFT.x,LIFT.z,toL)); } } }
+  if(goal<0) return null;
+  const pts=[]; for(let n=goal;n>=0;n=PR[n]){ const l=(n/N)|0, c=n-l*N, i=c%nx, j=(c-i)/nx; pts.push([cx(i),cz(j),Y[n],l]); } pts.reverse();
+  // 間引き（2.5mごと＋層が変わる所）
+  const out=[pts[0]]; let acc=0; for(let k=1;k<pts.length;k++){ const p=pts[k],q=pts[k-1]; acc+=Math.hypot(p[0]-q[0],p[1]-q[1]); const nx2=pts[k+1]; const turn=nx2&&(Math.sign(nx2[0]-p[0])!==Math.sign(p[0]-q[0])||Math.sign(nx2[1]-p[1])!==Math.sign(p[1]-q[1]));
+    if(acc>=2.5||(turn&&acc>=.9)||p[3]!==q[3]||k===pts.length-1){ if(p[3]!==q[3]) out.push(q); out.push(p); acc=0; } }
+  return out; }
+
+const NAV={i:-1,path:null,k:0,recalc:0,liftSaid:false};
+const navMarkMat=new THREE.MeshBasicMaterial({color:'#ff8a1e',transparent:true,opacity:.92,depthWrite:false,side:THREE.DoubleSide,fog:false,polygonOffset:true,polygonOffsetFactor:-4});
+const navMarks=new THREE.InstancedMesh((()=>{ const sh=new THREE.Shape(); sh.moveTo(0,.55); sh.lineTo(.42,-.1); sh.lineTo(.16,-.1); sh.lineTo(.16,-.5); sh.lineTo(-.16,-.5); sh.lineTo(-.16,-.1); sh.lineTo(-.42,-.1); sh.closePath(); const g=new THREE.ShapeGeometry(sh); g.rotateX(-PI/2); return g; })(),navMarkMat,18); navMarks.frustumCulled=false; navMarks.count=0; scene.add(navMarks);
+const navBeam=new THREE.Mesh(new THREE.CylinderGeometry(.9,.9,60,12,1,true),new THREE.MeshBasicMaterial({color:'#ffb050',transparent:true,opacity:.28,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false})); navBeam.visible=false; scene.add(navBeam);
+function navStart(i){ NAV.i=i; NAV.path=null; NAV.recalc=0; NAV.liftSaid=false; $('card').hidden=true; $('spots').hidden=true; $('map').hidden=true; $('navBar').hidden=false; $('navName').textContent=SPOTS[i].name; $('navDist').textContent='道をさがしています…'; setTimeout(navPlan,30); }
+function navStop(msg){ NAV.i=-1; NAV.path=null; navMarks.count=0; navBeam.visible=false; $('navBar').hidden=true; if(msg) say('',msg,4); }
+function navPlan(){ if(NAV.i<0) return; const s=SPOTS[NAV.i]; const tl=LAYER_OF_LVL[s.lvl];
+  const p=navFind(P.x,P.z,P.y,s.x,s.z,tl,Math.max(1.2,s.r*.5)); NAV.recalc=performance.now();
+  if(!p){ $('navDist').textContent='ここからの道が見つかりません'; NAV.path=null; return; }
+  NAV.path=p; NAV.k=0; const last=p[p.length-1]; navBeam.position.set(last[0],last[2]+30,last[1]); navBeam.visible=true; }
+function navUpdate(dt,t){ if(NAV.i<0) return; const s=SPOTS[NAV.i];
+  if(!spotOn(s)){ navStop('この時代にはない場所なので、案内を終えました。'); return; }
+  const lvl=lvlOf(P.x,P.y,P.z); if(s.lvl===lvl&&Math.hypot(P.x-s.x,P.z-s.z)<s.r*.75){ navStop(`「${s.name}」に着きました。`); return; }
+  const p=NAV.path; if(!p){ if(performance.now()-NAV.recalc>2500) navPlan(); return; }
+  const myL=layerOfY(P.y);
+  // いちばん近い経路上の点
+  let best=-1,bd=1e9; for(let k=Math.max(0,NAV.k-4);k<Math.min(p.length,NAV.k+30);k++){ if(p[k][3]!==myL) continue; const d=Math.hypot(p[k][0]-P.x,p[k][1]-P.z); if(d<bd){ bd=d; best=k; } }
+  if(best<0||bd>5){ if(performance.now()-NAV.recalc>1500&&!LIFTA) navPlan(); return; }
+  NAV.k=best;
+  // 残りの距離
+  let rem=bd; for(let k=best+1;k<p.length;k++){ if(p[k][3]!==p[k-1][3]) continue; rem+=Math.hypot(p[k][0]-p[k-1][0],p[k][1]-p[k-1][1]); }
+  const liftAhead=p.slice(best).some((q,k,a)=>k>0&&(q[3]===2)!==(a[k-1][3]===2));
+  $('navDist').textContent=`あと約${Math.max(1,Math.round(rem))}m`+(liftAhead?(myL===2?'（エレベーターで下りる）':'（途中でエレベーターに乗る）'):'');
+  if(liftAhead&&!NAV.liftSaid&&Math.hypot(P.x-LIFT.x,P.z-LIFT.z)<2.4){ NAV.liftSaid=true; say('道案内',myL===2?'ここでエレベーターに乗って下りましょう。':'ここでエレベーターに乗りましょう（下のボタン）。',5); }
+  // 足元の光の印（この先 40m ぶん）
+  let n=0; const _mm=new THREE.Matrix4(); for(let k=best+1;k<p.length&&n<18;k++){ if(p[k][3]!==myL) break; const q=p[k], nq=p[Math.min(p.length-1,k+1)]===q?p[k-1]:p[Math.min(p.length-1,k+1)]; const dir=nq===p[k-1]?Math.atan2(q[0]-nq[0],q[1]-nq[1]):Math.atan2(nq[0]-q[0],nq[1]-q[1]); const pulse=.85+.2*Math.sin(t*5-k*.8); _mm.compose(tmpV.set(q[0],q[2]+.12,q[1]),_q.setFromAxisAngle(_up,dir+PI),_s.set(pulse,1,pulse)); navMarks.setMatrixAt(n++,_mm); }
+  navMarks.count=n; navMarks.instanceMatrix.needsUpdate=true; navBeam.material.opacity=.18+.1*Math.sin(t*2); }
+// 案内中の経路をミニマップに描く
+function navMini(lv,scale,W){ if(NAV.i<0||!NAV.path) return; const L=LAYER_OF_LVL[lv]; mg.strokeStyle='rgba(255,176,80,.95)'; mg.lineWidth=3; mg.setLineDash([5,4]); mg.beginPath(); let on=false;
+  for(let k=NAV.k;k<NAV.path.length;k++){ const q=NAV.path[k]; if(q[3]!==L){ on=false; continue; } const x=(q[0]-P.x)*scale+W/2, z=(q[1]-P.z)*scale+W/2; if(on) mg.lineTo(x,z); else { mg.moveTo(x,z); on=true; } } mg.stroke(); mg.setLineDash([]); }
+
+/* ---------- 案内板 ---------- */
+function signTex(lines,bg){ const W=512,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); g.fillStyle=bg||'#1e3a52'; g.fillRect(0,0,W,H); g.strokeStyle='#e8d8b0'; g.lineWidth=8; g.strokeRect(10,10,W-20,H-20); g.fillStyle='#fff'; g.textAlign='center'; g.font='bold 64px sans-serif'; g.fillText(lines[0],W/2,H*.45); g.font='bold 40px sans-serif'; g.fillStyle='#f0d8a0'; g.fillText(lines[1]||'',W/2,H*.8); return toTex(c,true,false); }
+function signAt(grp,x,y,z,ry,lines,w,post){ const m=new THREE.Mesh(new THREE.PlaneGeometry(w||1.6,(w||1.6)/2),new THREE.MeshBasicMaterial({map:signTex(lines),side:THREE.DoubleSide})); m.position.set(x,y,z); m.rotation.y=ry; eg(grp).add(m);
+  if(post){ const p=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,y,6),M.iron); p.position.set(x,y/2,z); eg(grp).add(p); } }
+signAt('nk',29.2,3.1,-7,-PI/2,['塔へ ▲','エレベーター（65m）'],1.6);
+signAt('nk',29.2,3.1,7,-PI/2,['螺旋階段','塔の出口'],1.6);
+signAt('nk',27,2.4,-2.2,-PI/2,['◀ 塔のエレベーター','右奥（北）へ'],1.6,true);
+signAt('26nk',-25.3,2.0,-44.6,PI,['地下聖堂 ⬇','ガウディの墓'],1.5,true);
+signAt('nk',-23.6,2.0,-12.6,-PI/2,['地下聖堂へ ▶','外へ出て後陣の北西'],1.5,true);
+signAt('nk',40.5,2.2,4.8,PI/2,['入口 ▶','聖堂の中へ'],1.4,true);
 
 </script>
 </body>
