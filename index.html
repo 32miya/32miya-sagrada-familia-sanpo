@@ -1,0 +1,1390 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#100e0c">
+<meta name="description" content="バルセロナのサグラダ・ファミリアを、スマホで歩いて巡る3D散策。ガウディ没年の1926年・現在・完成予想を切り替えられます。">
+<title>サグラダ・ファミリアさんぽ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
+<style>
+:root{
+  --sumi:#100e0c;
+  --panel:rgba(22,18,15,.8);
+  --panel-solid:#1a1613;
+  --ink:#f4ede2;
+  --mute:#b6aa99;
+  --shu:#c2571c;
+  --shu2:#f08a3a;
+  --ao:#3a93c4;
+  --line:rgba(244,237,226,.15);
+  --f-disp:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif;
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0;background:var(--sumi);color:var(--ink);overflow:hidden;font-family:var(--f-body)}
+body{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+#app,#app canvas{position:fixed;inset:0;display:block;width:100%;height:100%}
+button{font:inherit;color:inherit}
+button:focus-visible{outline:2px solid var(--shu2);outline-offset:2px}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:1;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.35) 100%)}
+
+.place{position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:calc(env(safe-area-inset-left,0px) + 16px);pointer-events:none;text-shadow:0 1px 10px rgba(0,0,0,.85);max-width:calc(100% - 170px);z-index:4}
+.eyebrow{font-size:11px;letter-spacing:.2em;color:var(--mute)}
+.place .area{font-family:var(--f-disp);font-weight:800;font-size:22px;letter-spacing:.04em;margin-top:3px;text-wrap:balance}
+#fudaN{font-size:11px;color:var(--mute);margin-top:4px;letter-spacing:.1em}
+
+#mini{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);width:108px;height:108px;border-radius:12px;border:1px solid var(--line);background:var(--panel);padding:0;cursor:pointer;overflow:hidden;z-index:4}
+#mini canvas{width:100%;height:100%;display:block}
+#mini .n{position:absolute;top:3px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;text-shadow:0 0 4px #000}
+#mini .tap{position:absolute;bottom:3px;right:6px;font-size:9px;color:var(--mute);letter-spacing:.1em}
+
+.topbtns{position:fixed;top:calc(env(safe-area-inset-top,0px) + 128px);right:calc(env(safe-area-inset-right,0px) + 12px);display:flex;gap:6px;z-index:6}
+.topbtns button{height:34px;padding:0 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+#menuBtn[aria-expanded="true"]{border-color:rgba(240,138,58,.7)}
+#menu{position:fixed;top:calc(env(safe-area-inset-top,0px) + 170px);right:calc(env(safe-area-inset-right,0px) + 12px);width:min(300px,calc(100% - 24px));z-index:7;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:12px;box-shadow:0 14px 40px rgba(0,0,0,.6);max-height:calc(100vh - 200px);overflow:auto;touch-action:pan-y}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tool{height:54px;border-radius:12px;border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;padding:0}
+.tool small{font-size:10px;color:var(--mute);letter-spacing:.1em}
+.tool b{font-family:var(--f-disp);font-size:14px;font-weight:800;white-space:nowrap}
+.tool:active{transform:scale(.96)}
+.mrow{display:grid;gap:6px;font-size:12px;color:var(--mute)}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;height:34px;border:0;background:transparent;font-size:12px;cursor:pointer;color:var(--mute)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:rgba(194,87,28,.38);color:var(--ink);font-weight:700}
+
+#pad{position:fixed;inset:0;pointer-events:none;z-index:3}
+.pbase{position:fixed;width:124px;height:124px;margin:0;border-radius:50%;border:1.5px solid rgba(244,237,226,.28);background:radial-gradient(circle,rgba(22,18,15,.2),rgba(22,18,15,.42));opacity:.5;transition:opacity .2s;bottom:calc(env(safe-area-inset-bottom,0px) + 30px)}
+#stickBase{left:calc(env(safe-area-inset-left,0px) + 22px)}
+#lookBase{right:calc(env(safe-area-inset-right,0px) + 22px)}
+.pbase.on{opacity:1;transition:none;border-color:rgba(244,237,226,.5)}
+.pbase i{position:absolute;left:50%;top:50%;width:50px;height:50px;margin:-25px 0 0 -25px;border-radius:50%;background:rgba(244,237,226,.82);box-shadow:0 2px 10px rgba(0,0,0,.35)}
+#lookBase i{background:rgba(244,237,226,.25);border:2px solid rgba(244,237,226,.85);box-sizing:border-box}
+.pbase span{position:absolute;left:0;right:0;top:-20px;text-align:center;font-size:10px;letter-spacing:.2em;color:var(--mute);text-shadow:0 1px 4px #000}
+.pbase.on span{opacity:0}
+.pbtn{position:fixed;pointer-events:auto;width:58px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--panel);font-size:12px;font-weight:700;cursor:pointer;bottom:calc(env(safe-area-inset-bottom,0px) + 182px)}
+#runBtn{left:calc(env(safe-area-inset-left,0px) + 55px)}
+#levelBtn{right:calc(env(safe-area-inset-right,0px) + 55px)}
+#upBtn{right:calc(env(safe-area-inset-right,0px) + 120px)}
+#runBtn[aria-pressed="true"]{background:rgba(194,87,28,.92);border-color:transparent;color:#fff}
+
+#poi{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);max-width:calc(100% - 190px);display:flex;align-items:center;gap:10px;padding:10px 16px 10px 12px;border-radius:12px;border:1px solid rgba(240,138,58,.55);background:var(--panel);cursor:pointer;z-index:4;white-space:nowrap}
+body.touchui #poi{bottom:calc(env(safe-area-inset-bottom,0px) + 234px);max-width:calc(100% - 40px)}
+#poi .dia{width:9px;height:9px;background:var(--shu2);transform:rotate(45deg);flex:none}
+#poi .nm{font-family:var(--f-disp);font-weight:800;font-size:16px;overflow:hidden;text-overflow:ellipsis}
+#poi .go{font-size:12px;color:var(--mute)}
+#hint{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 176px);transform:translateX(-50%);padding:10px 16px;border-radius:14px;max-width:calc(100% - 40px);width:max-content;text-align:center;line-height:1.7;background:var(--panel);font-size:13px;z-index:5;pointer-events:none;font-family:var(--f-disp);border:1px solid var(--line)}
+#hint .who{display:block;font-size:10px;letter-spacing:.2em;color:var(--mute);font-family:var(--f-body)}
+#actBtn{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 74px);z-index:6;height:46px;padding:0 22px;border-radius:999px;border:1px solid rgba(58,147,196,.8);background:rgba(20,60,86,.88);color:#fff;font-weight:700;font-size:15px;cursor:pointer;letter-spacing:.06em;box-shadow:0 0 18px rgba(58,147,196,.45);white-space:nowrap}
+body.touchui #actBtn{bottom:calc(env(safe-area-inset-bottom,0px) + 290px)}
+#toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:9;pointer-events:none;text-align:center;font-family:var(--f-disp);opacity:0;transition:opacity .5s}
+#toast .f{display:inline-block;writing-mode:vertical-rl;padding:18px 12px;background:#f0e4cc;color:#3a1608;border:3px double #a8501c;font-size:22px;font-weight:800;letter-spacing:.12em;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#toast small{display:block;margin-top:10px;font-size:12px;color:var(--ink);text-shadow:0 1px 6px #000;font-family:var(--f-body)}
+#seal{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%) scale(1.6) rotate(-8deg);z-index:10;pointer-events:none;opacity:0;transition:opacity .35s,transform .35s cubic-bezier(.2,1.6,.4,1)}
+#seal.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-8deg)}
+#seal .in{width:168px;height:168px;border-radius:50%;border:6px solid #b8281c;color:#b8281c;background:rgba(244,232,210,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--f-disp);font-weight:800;box-shadow:0 10px 40px rgba(0,0,0,.55);text-align:center;line-height:1.25}
+#seal .in b{font-size:24px;letter-spacing:.1em}#seal .in span{font-size:11px;letter-spacing:.12em}#seal .in i{font-style:normal;font-size:30px}
+
+#card{box-sizing:border-box;position:fixed;left:calc(env(safe-area-inset-left,0px) + 12px);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);width:min(430px,calc(100% - 24px));max-height:min(62vh,540px);overflow:auto;background:var(--panel-solid);border:1px solid var(--line);border-radius:14px;padding:16px 18px 14px;z-index:8;touch-action:pan-y;box-shadow:0 14px 40px rgba(0,0,0,.6)}
+#card .kana{font-size:11px;letter-spacing:.16em;color:var(--mute)}
+#card h2{font-family:var(--f-disp);font-weight:800;font-size:25px;margin:2px 0 10px;letter-spacing:.03em;text-wrap:balance}
+#card p{font-size:14px;line-height:1.85;margin:0 0 14px;max-width:34em}
+#card dl{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;padding-top:12px;border-top:1px solid var(--line);font-size:13px}
+#card dt{color:var(--mute);letter-spacing:.08em}
+#card dd{margin:0}
+#card .x{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:18px;line-height:1}
+.card-nav{display:flex;gap:8px;margin-top:14px}
+.card-nav button{flex:1;height:40px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:13px}
+#spotsBtn{font-weight:700;cursor:pointer}
+#spotsBtn::before{content:"";width:7px;height:7px;background:var(--shu2);transform:rotate(45deg)}
+
+.ovl{position:fixed;inset:0;z-index:20;background:rgba(14,12,10,.96);display:flex;flex-direction:column;gap:12px;overflow:auto;touch-action:pan-y;padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));box-sizing:border-box}
+.ovl header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ovl h2{font-family:var(--f-disp);font-weight:800;font-size:22px;margin:0;letter-spacing:.05em}
+.ovl .x{height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px}
+.sp-card{display:grid;grid-template-columns:54px 1fr;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(244,237,226,.03);text-align:left;cursor:pointer;min-width:0}
+.sp-card .fd{width:54px;height:76px;border-radius:3px;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-family:var(--f-disp);font-weight:800;font-size:12px;letter-spacing:.06em;background:#241e19;color:#62574c;border:1px dashed #4d4238;overflow:hidden}
+.sp-card .fd.got{background:#f0e4cc;color:#3a1608;border:2px double #a8501c}
+.sp-card b{font-family:var(--f-disp);font-size:16px;font-weight:800;display:block}
+.sp-card small{color:var(--mute);font-size:11px;display:block;margin-bottom:3px}
+.sp-card span{font-size:12px;opacity:.8;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}
+.note{font-size:11px;color:var(--mute);line-height:1.6}
+.story-body{max-width:38em;font-size:14px;line-height:1.9}.story-body p{margin:0 0 12px}.story-body ol{margin:0 0 12px;padding-left:1.4em}.story-body li{margin-bottom:6px}.story-body b{font-family:var(--f-disp);color:#f6c89a}
+.story-body table{border-collapse:collapse;font-size:13px;margin:0 0 14px}.story-body td{padding:5px 10px 5px 0;vertical-align:top;border-bottom:1px solid var(--line)}.story-body td:first-child{white-space:nowrap;color:#f6c89a;font-family:var(--f-disp);font-weight:800}
+
+.mapbody{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start}
+.lvtabs{display:flex;gap:6px;flex-wrap:wrap}
+.lvtabs button{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:transparent;font-size:12px;cursor:pointer;color:var(--mute)}
+.lvtabs button.on{background:rgba(194,87,28,.38);color:var(--ink);font-weight:700}
+.mapframe{position:relative;flex:1 1 300px;max-width:min(100%,calc((100vh - 170px) * 1));aspect-ratio:1/1;border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#14110e}
+.mapframe canvas{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:5px;padding:3px 7px 3px 5px;border-radius:7px;border:0;background:rgba(22,18,15,.86);font-size:11px;cursor:pointer;white-space:nowrap}
+.pin::before{content:"";width:7px;height:7px;background:var(--shu2);transform:rotate(45deg)}
+.me{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(58,147,196,.9);pointer-events:none}
+.spotlist{flex:1 1 240px;min-width:0;display:grid;gap:6px;align-content:start}
+.spotlist button{display:flex;align-items:baseline;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(244,237,226,.03);cursor:pointer}
+.spotlist b{font-family:var(--f-disp);font-size:15px;font-weight:800}
+.spotlist small{color:var(--mute);font-size:11px}
+
+#photoUI{position:fixed;inset:0;z-index:12;pointer-events:none}
+#photoUI button{pointer-events:auto;position:fixed;border:1px solid var(--line);background:var(--panel);cursor:pointer}
+#shutter{left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 26px);width:72px;height:72px;border-radius:50%!important;border:4px solid #fff!important;background:rgba(194,87,28,.6)!important}
+#photoX{top:calc(env(safe-area-inset-top,0px) + 14px);right:calc(env(safe-area-inset-right,0px) + 14px);height:38px;padding:0 14px;border-radius:10px}
+#shot{position:fixed;inset:0;z-index:25;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;box-sizing:border-box}
+#shot img{max-width:100%;max-height:75vh;border-radius:8px;-webkit-touch-callout:default;-webkit-user-select:auto;user-select:auto;pointer-events:auto}
+#shot button{height:40px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer}
+body.photo .place,body.photo #mini,body.photo .topbtns,body.photo #menu,body.photo #pad,body.photo #poi,body.photo #hint,body.photo #card,body.photo #actBtn{display:none!important}
+body.lift #pad .pbase#stickBase,body.lift #runBtn,body.lift #poi{display:none!important}
+
+#start{position:fixed;inset:0;z-index:30;display:flex;align-items:flex-end;background:linear-gradient(180deg,rgba(12,10,8,0) 25%,rgba(12,10,8,.55) 55%,rgba(12,10,8,.94) 84%);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px);padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));box-sizing:border-box}
+.start-in{display:flex;flex-direction:column;gap:12px;max-width:640px}
+.ttl{margin:0;font-family:var(--f-disp);font-weight:800;line-height:1.05;letter-spacing:.04em;text-shadow:0 2px 24px rgba(0,0,0,.75)}
+.ttl .s{display:block;font-size:13px;letter-spacing:.32em;color:var(--mute);margin-bottom:8px;font-family:var(--f-body);font-weight:700}
+.ttl .m{display:block;font-size:clamp(28px,7.8vw,62px);white-space:nowrap}
+.ttl .m em{font-style:normal;background:linear-gradient(90deg,#f6a24e,#f3d27a 40%,#7cc6e8 70%,#3a93c4);-webkit-background-clip:text;background-clip:text;color:transparent}
+.ttl .k{display:block;font-size:clamp(20px,5vw,30px);margin-top:4px;color:#efe2cc}
+.start-in p{margin:0;font-size:14px;line-height:1.85;max-width:32em}
+.start-in .ctl{font-size:12px;color:var(--mute);line-height:1.7}
+.go-btn{align-self:flex-start;border:0;border-radius:10px;background:var(--shu);color:#fff;font-weight:700;font-size:16px;padding:14px 24px;cursor:pointer;letter-spacing:.08em;box-shadow:0 0 24px rgba(194,87,28,.55)}
+.go-btn[disabled]{opacity:.55;cursor:default}
+.start-in a{color:var(--mute)}
+#err{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;line-height:1.8;z-index:40;background:var(--sumi)}
+#load{position:fixed;left:0;right:0;top:calc(env(safe-area-inset-top,0px) + 18px);text-align:center;font-size:12px;color:var(--mute);z-index:31;letter-spacing:.14em}
+@media (min-width:760px){ .place .area{font-size:26px} #mini{width:132px;height:132px} .topbtns{top:calc(env(safe-area-inset-top,0px) + 152px)} #menu{top:calc(env(safe-area-inset-top,0px) + 194px)} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="vig"></div>
+
+<div class="place"><div class="eyebrow" id="eyebrow">サグラダ・ファミリア · 現在</div><div class="area" id="area">ガウディ広場</div><div id="fudaN"></div></div>
+<button id="mini" aria-label="地図を開く"><canvas id="miniC" width="216" height="216"></canvas><span class="n">北</span><span class="tap">地図</span></button>
+<div class="topbtns"><button id="menuBtn" aria-expanded="false" aria-controls="menu">メニュー</button><button id="spotsBtn" aria-label="見どころの一覧を開く">見どころ</button></div>
+
+<section id="menu" hidden aria-label="メニュー">
+  <div class="tools">
+    <button class="tool" id="tEra"><small>とき</small><b id="vEra">現在</b></button>
+    <button class="tool" id="tTime"><small>時刻</small><b id="vTime">昼</b></button>
+    <button class="tool" id="tSnd"><small>音</small><b id="vSnd">あり</b></button>
+    <button class="tool" id="tPhoto"><small>写真</small><b>撮る</b></button>
+    <button class="tool" id="tQual"><small>画質</small><b id="vQual">高</b></button>
+    <button class="tool" id="tPeople"><small>人</small><b id="vPeople">多い</b></button>
+    <button class="tool" id="tHome"><small>入口へ</small><b>戻る</b></button>
+    <button class="tool" id="tStory"><small>歴史</small><b>読む</b></button>
+  </div>
+  <div class="mrow"><span>とき（時代）</span><div class="seg" id="eraSeg"><button data-v="26">1926年</button><button data-v="n">現在</button><button data-v="k">完成予想</button></div></div>
+  <div class="mrow"><span>時刻</span><div class="seg" id="timeSeg"><button data-v="asa">朝</button><button data-v="hiru">昼</button><button data-v="yu">夕</button><button data-v="yoru">夜</button></div></div>
+  <div class="mrow"><span>見回す速さ</span><div class="seg" id="sensSeg"><button data-v="0">ゆっくり</button><button data-v="1">ふつう</button><button data-v="2">速い</button></div></div>
+  <div class="mrow"><span>操作パッド</span><div class="seg" id="padSeg"><button data-v="1">表示</button><button data-v="0">隠す</button></div></div>
+  <div class="note"><a href="https://32miya.github.io/" style="color:inherit">HTMMゲーム館へ</a></div>
+</section>
+
+<div id="pad" hidden>
+  <div class="pbase" id="stickBase"><i id="stickKnob"></i><span>移動</span></div>
+  <div class="pbase" id="lookBase"><i id="lookKnob"></i><span>視点</span></div>
+  <button class="pbtn" id="runBtn" aria-pressed="false">走る</button>
+  <button class="pbtn" id="levelBtn">正面</button>
+  <button class="pbtn" id="upBtn">見上げ</button>
+</div>
+
+<button id="poi" hidden><span class="dia"></span><span class="nm" id="poiName"></span><span class="go">解説</span></button>
+<div id="hint" hidden></div>
+<button id="actBtn" hidden></button>
+<div id="toast"><div class="f" id="toastF"></div><small id="toastS"></small></div>
+<div id="seal"><div class="in"><span>SAGRADA FAMÍLIA</span><i>✠</i><b>登塔の印</b><span id="sealD"></span></div></div>
+
+<section id="card" hidden aria-live="polite">
+  <button class="x" id="cardX" aria-label="閉じる">×</button>
+  <div class="kana" id="cKana"></div>
+  <h2 id="cName"></h2>
+  <p id="cText"></p>
+  <dl id="cMeta"></dl>
+  <div class="card-nav"><button id="cPrev">◀ 前へ</button><button id="cNext">次へ ▶</button></div>
+</section>
+
+<section id="map" class="ovl" hidden>
+  <header><h2>聖堂と街の地図</h2><button class="x" id="mapX">閉じる</button></header>
+  <div class="lvtabs" id="lvTabs"></div>
+  <div class="mapbody">
+    <div class="mapframe" id="mapFrame"><canvas id="mapC"></canvas><div class="me" id="meDot"></div></div>
+    <div class="spotlist" id="spotList"></div>
+  </div>
+  <div class="note">ピンか一覧をタップすると、その場所へ移動します（移動した先では見どころ札はもらえません。いったん離れて歩いてたどり着いてください）。</div>
+</section>
+
+<section id="story" class="ovl" hidden>
+  <header><h2>サグラダ・ファミリアの歩み</h2><button class="x" id="storyX">閉じる</button></header>
+  <div class="story-body">
+  <p>正式名は「聖家族贖罪教会（Temple Expiatori de la Sagrada Família）」。寄付と入場料だけで建て続けられてきた、バルセロナの教会です。ガウディは31歳でこの仕事を引き継ぎ、残りの生涯のほとんどをここに捧げました。</p>
+  <table>
+    <tr><td>1882年</td><td>建築家ビリャールの設計で着工（地下聖堂から）。</td></tr>
+    <tr><td>1883年</td><td>アントニ・ガウディが主任建築家を引き継ぎ、設計を大きく描き直す。</td></tr>
+    <tr><td>1889年</td><td>地下聖堂（クリプタ）が完成。続いて後陣の外壁が立ち上がる。</td></tr>
+    <tr><td>1925年</td><td>生誕のファサードの鐘塔のうち、聖バルナバの塔が完成。ガウディが見届けた唯一の塔。</td></tr>
+    <tr><td>1926年</td><td>6月10日、ガウディ死去（路面電車の事故）。地下聖堂に葬られる。</td></tr>
+    <tr><td>1936年</td><td>スペイン内戦で工房が焼かれ、図面や石膏模型の多くが失われる。のちに破片から模型が組み直される。</td></tr>
+    <tr><td>1954年〜</td><td>受難のファサードの工事が始まる（彫刻はのちにスビラックスが担当）。</td></tr>
+    <tr><td>2005年</td><td>生誕のファサードと地下聖堂が、ガウディの作品群として世界遺産に。</td></tr>
+    <tr><td>2010年</td><td>身廊の屋根が架かり、教皇ベネディクト16世が献堂。「バシリカ（小聖堂）」となる。</td></tr>
+    <tr><td>2015年</td><td>外尾悦郎による生誕のファサードの扉（植物と虫のブロンズ）が完成。</td></tr>
+    <tr><td>2021年</td><td>聖母マリアの塔が完成し、頂に12の光を放つ星が灯る。</td></tr>
+    <tr><td>2023年</td><td>4人の福音書記者の塔が完成。</td></tr>
+    <tr><td>2026年</td><td>2月20日、イエス・キリストの塔の頂に十字架の上の腕が据えられ、高さ172.5mに。教会として世界一の高さになる。ガウディ没後100年の6月10日、教皇レオ14世が祝福。</td></tr>
+    <tr><td>これから</td><td>正面にあたる栄光のファサードと、その4本の鐘塔の工事が続く（2030年代の完成が目標）。</td></tr>
+  </table>
+  <p><b>18本の塔</b>——12使徒（4本ずつ3つのファサードに）、4人の福音書記者、聖母マリア、そして中央のイエス・キリスト。高い塔ほど大切な人物にあてられ、全体でひとつの「聖書の物語」を形づくっています。</p>
+  <p><b>森のような内部</b>——ガウディは柱を枝分かれする木に見立て、天井を木の葉のように光が漏れる森として設計しました。東の窓は朝の光を受ける青と緑、西の窓は夕日を受ける赤と橙。時刻を「朝」「夕」に変えると、色の光の入り方が変わります。</p>
+  <p class="note">このアプリの建物や街並みは、写真や資料をもとにした簡略な再現です。方角は、生誕のファサードを東・受難のファサードを西・栄光のファサード（正面）を南としています（実際は北東・南西・南東）。「完成予想」は公表されている計画をもとにした想像を含みます。</p>
+  </div>
+</section>
+<section id="spots" class="ovl" hidden>
+  <header><h2>見どころ札</h2><button class="x" id="spotsX">閉じる</button></header>
+  <div class="note" id="spSum"></div>
+  <div class="sp-grid" id="spGrid"></div>
+</section>
+
+<div id="photoUI" hidden><button id="shutter" aria-label="撮影"></button><button id="photoX">戻る</button></div>
+<div id="shot" hidden><img id="shotImg" alt="撮影した写真"><div class="note">画像を長押し（右クリック）で保存できます</div><button id="shotX">閉じる</button></div>
+
+<section id="start">
+  <div class="start-in">
+    <h1 class="ttl"><span class="s">BARCELONA · 3D散策</span><span class="m"><em>サグラダ・ファミリア</em></span><span class="k">さんぽ</span></h1>
+    <p>ガウディが生涯をかけた「聖家族贖罪教会」。2026年、中央のイエス・キリストの塔が172.5mに達しました。生誕・受難・栄光の3つのファサード、木の森のような柱、色の光が満ちる内部、ガウディが眠る地下聖堂、そして塔の上まで歩いて巡りましょう。</p>
+    <div class="ctl" id="ctlText"></div>
+    <button class="go-btn" id="goBtn" disabled>準備中…</button>
+    <div class="note">メニューの「とき」で、ガウディが亡くなった1926年・現在・完成予想を切り替えられます。</div>
+  </div>
+</section>
+<div id="load">街と聖堂を組み立てています…</div>
+<div id="err" hidden>この端末では3D表示を開始できませんでした。<br>WebGLに対応したブラウザで開いてください。</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="/oshiro/common/perf.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   サグラダ・ファミリアさんぽ — three.js r128 単一HTML
+   （お城さんぽシリーズ・蝋人形館さんぽと同じ操作系・UI）
+   座標: x＝東、z＝南、y＝上（単位 m）。交差部の中心が原点。
+   ============================================================ */
+const $=id=>document.getElementById(id);
+const isTouch=('ontouchstart' in window)||navigator.maxTouchPoints>0;
+if(isTouch) document.body.classList.add('touchui');
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'}); }catch(e){ $('err').hidden=false; throw e; }
+let quality='high';
+function applyPR(){ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, quality==='high'?(isTouch?1.6:1.75):1)); }
+applyPR();
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.05;
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; renderer.shadowMap.autoUpdate=true;
+$('app').appendChild(renderer.domElement);
+const maxAniso=renderer.capabilities.getMaxAnisotropy();
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.15,7000);
+camera.rotation.order='YXZ';
+scene.add(camera);
+const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+const PI=Math.PI, TAU=Math.PI*2;
+
+/* ---------- 乱数・ノイズ ---------- */
+let seed=20261117;
+function rnd(){ seed=(seed*16807)%2147483647; return (seed-1)/2147483646; }
+const R=(a,b)=>a+(b-a)*rnd();
+const pick=a=>a[Math.floor(rnd()*a.length)];
+function hash(x,y){ const h=Math.sin(x*127.1+y*311.7)*43758.5453; return h-Math.floor(h); }
+function vnoise(x,y){ const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=hash(xi,yi),b=hash(xi+1,yi),c=hash(xi,yi+1),d=hash(xi+1,yi+1); return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v; }
+function fbm(x,y,o){ let s=0,a=.5,f=1; for(let i=0;i<(o||4);i++){ s+=a*vnoise(x*f,y*f); f*=2.03; a*=.5; } return s; }
+function makeCanvas(w,h){ const c=document.createElement('canvas'); c.width=w; c.height=h; return c; }
+function toTex(c,srgb,rep){ const t=new THREE.CanvasTexture(c); if(rep!==false) t.wrapS=t.wrapT=THREE.RepeatWrapping; if(srgb!==false) t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(8,maxAniso); return t; }
+function speckle(g,w,h,n,a){ for(let i=0;i<n;i++){ const v=rnd()<.5?0:255; g.fillStyle=`rgba(${v},${v},${v},${(a*rnd()).toFixed(3)})`; g.fillRect(rnd()*w,rnd()*h,1+rnd()*2,1+rnd()*2); } }
+function blotch(g,w,h,n,col,a,rmax){ for(let i=0;i<n;i++){ g.globalAlpha=a*rnd(); g.fillStyle=col; g.beginPath(); g.ellipse(rnd()*w,rnd()*h,5+rnd()*rmax,4+rnd()*rmax*.7,rnd()*3,0,6.283); g.fill(); } g.globalAlpha=1; }
+function noiseFill(g,w,h,c0,c1,sc,o,sx){ const d=g.createImageData(w,h),p=d.data; const A=new THREE.Color(c0),B=new THREE.Color(c1); sx=sx||1;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const n=fbm(x/sc*sx,y/sc,o||4), t=Math.min(1,Math.max(0,n*1.6-.3)), i=(y*w+x)*4; p[i]=(A.r+(B.r-A.r)*t)*255; p[i+1]=(A.g+(B.g-A.g)*t)*255; p[i+2]=(A.b+(B.b-A.b)*t)*255; p[i+3]=255; }
+  g.putImageData(d,0,0); }
+function streaks(g,W,H,n,col,a){ for(let i=0;i<n;i++){ const x=rnd()*W, y=rnd()*H*.6, l=R(H*.15,H*.6), w=R(1,5); const gr=g.createLinearGradient(0,y,0,y+l); gr.addColorStop(0,col.replace('A',(a*rnd()).toFixed(3))); gr.addColorStop(1,col.replace('A','0')); g.fillStyle=gr; g.fillRect(x,y,w,l); } }
+
+/* ============================================================
+   手続き生成テクスチャ
+   ============================================================ */
+const TX={};
+// 新しい石（モンジュイック砂岩風の明るいベージュ）
+function stoneTex(base,dark,blocks,weather){ const W=512,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,base,dark,70,5);
+  if(blocks){ g.strokeStyle='rgba(60,45,30,.28)'; g.lineWidth=2; const bh=W/8; for(let r=0;r<8;r++){ g.beginPath(); g.moveTo(0,r*bh); g.lineTo(W,r*bh); g.stroke(); const off=(r%2)*W/6; for(let x=off;x<W+1;x+=W/3){ g.beginPath(); g.moveTo(x,r*bh); g.lineTo(x,(r+1)*bh); g.stroke(); } } }
+  if(weather) streaks(g,W,W,weather,'rgba(30,24,18,A)',.35);
+  blotch(g,W,W,20,'#5a4a36',.08,40); speckle(g,W,W,5000,.08); return toTex(c); }
+TX.sand=stoneTex('#d9c39e','#b89c72',true,40);
+TX.sandL=stoneTex('#e3d3b4','#c8b08a',true,10);
+TX.old=stoneTex('#9c8a72','#6a5a48',false,160);     // 生誕のファサード：古び、黒ずんだ石
+TX.oldB=stoneTex('#8a7a66','#5a4c3c',true,120);
+TX.grey=stoneTex('#c9c4ba','#a49c90',true,20);      // 中央の塔の灰白色の石
+// 生誕の「とけるような」彫刻のでこぼこ（バンプ用・カラー兼用）
+TX.drip=(()=>{ const W=512,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#a08c72','#5e4e3e',40,5);
+  for(let i=0;i<260;i++){ const x=rnd()*W,y=rnd()*W,r=R(6,26); const gr=g.createRadialGradient(x-r*.3,y-r*.3,1,x,y,r); gr.addColorStop(0,'rgba(220,205,180,.75)'); gr.addColorStop(.7,'rgba(120,100,80,.35)'); gr.addColorStop(1,'rgba(40,30,20,0)'); g.fillStyle=gr; g.beginPath(); g.ellipse(x,y,r,r*R(1,2.2),0,0,TAU); g.fill(); }
+  streaks(g,W,W,140,'rgba(25,20,14,A)',.5); return toTex(c); })();
+// 鐘塔の羽板（ルーバー）：透かし（alpha）付き
+function louverTex(base,dark,letters){ const W=512,H=1024,c=makeCanvas(W,H),g=c.getContext('2d'); noiseFill(g,W,H,base,dark,60,4);
+  streaks(g,W,H,60,'rgba(30,24,18,A)',.3); const a=makeCanvas(W,H),ga=a.getContext('2d'); ga.fillStyle='#fff'; ga.fillRect(0,0,W,H);
+  const cols=4, rows=22; for(let r=0;r<rows;r++) for(let k=0;k<cols;k++){ const x=k*W/cols+(r%2)*W/cols/2, y=r*H/rows+H/rows*.2, w=W/cols*.42, h=H/rows*.5;
+    g.fillStyle='rgba(30,22,16,.85)'; g.fillRect(x+4,y,w,h); ga.fillStyle='#000'; ga.fillRect(x+7,y+3,w-6,h-6);
+    g.fillStyle='rgba(255,240,215,.18)'; g.fillRect(x+4,y+h,w,3); }
+  if(letters){ g.font='bold 34px serif'; g.fillStyle='rgba(250,236,200,.9)'; g.textAlign='center'; const words=letters; for(let r=0;r<4;r++){ const y=H*(.18+r*.22); g.save(); g.translate(W/2,y); g.rotate(-.18); g.fillText(words[r%words.length],0,0); g.restore(); } }
+  return {map:toTex(c),alpha:toTex(a,false)}; }
+TX.louN=louverTex('#9c8a72','#6c5c4a',['SANCTUS','SANCTUS','SANCTUS','HOSANNA']);
+TX.louP=louverTex('#cdb894','#a68c68',['SANCTUS','HOSANNA','IN EXCELSIS','SANCTUS']);
+TX.louG=louverTex('#ddd0b6','#bba98a',['GLORIA','SANCTUS','CREDO','HOSANNA']);
+// ヴェネツィアン・ガラスのモザイク（塔の頂）
+function mosaicTex(cols){ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); g.fillStyle='#e8e2d2'; g.fillRect(0,0,W,W); const s=8;
+  for(let y=0;y<W;y+=s) for(let x=0;x<W;x+=s){ const band=Math.floor((y/W)*cols.length*2)%cols.length; const col=rnd()<.78?cols[band]:pick(cols); g.fillStyle=col; g.fillRect(x+1,y+1,s-2,s-2); g.fillStyle='rgba(255,255,255,'+(rnd()*.35).toFixed(2)+')'; g.fillRect(x+1,y+1,s-4,2); }
+  return toTex(c); }
+TX.mosN=mosaicTex(['#b8202a','#e8c030','#f0ece0','#c06020','#e8c030']);
+TX.mosP=mosaicTex(['#d03028','#f0b828','#f0ece0','#1860a8']);
+TX.mosG=mosaicTex(['#f0d040','#ffffff','#e09030','#3a8ac8']);
+// トレンカディス（白い割れタイル）
+TX.trenc=(()=>{ const W=512,c=makeCanvas(W,W),g=c.getContext('2d'); g.fillStyle='#9a958c'; g.fillRect(0,0,W,W);
+  for(let i=0;i<900;i++){ const x=rnd()*W,y=rnd()*W,r=R(5,14); const v=Math.floor(R(225,252)); g.fillStyle=`rgb(${v},${v},${v-4})`; g.beginPath(); const n=5+Math.floor(rnd()*3); for(let k=0;k<n;k++){ const a=k/n*TAU+rnd()*.6, rr=r*R(.6,1.1); k?g.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):g.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr); } g.closePath(); g.fill(); }
+  g.strokeStyle='rgba(0,0,0,.18)'; g.lineWidth=2; for(let x=0;x<W;x+=W/8){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,W); g.stroke(); } return toTex(c); })();
+// ステンドグラス
+function glassTex(pal,seedv){ seed=seedv; const W=256,H=512,c=makeCanvas(W,H),g=c.getContext('2d'); g.fillStyle='#101418'; g.fillRect(0,0,W,H);
+  const s=16; for(let y=0;y<H;y+=s) for(let x=0;x<W;x+=s){ const t=y/H; const idx=Math.min(pal.length-1,Math.floor((t+R(-.12,.12))*pal.length)); const col=pal[Math.max(0,idx)]; g.fillStyle=col; g.globalAlpha=R(.75,1); g.fillRect(x+1.5,y+1.5,s-3,s-3); }
+  g.globalAlpha=1; for(let i=0;i<10;i++){ const x=R(20,W-20),y=R(20,H-20),r=R(10,30); const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(255,255,245,.75)'); gr.addColorStop(1,'rgba(255,255,245,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); }
+  g.strokeStyle='#0a0c0e'; g.lineWidth=3; for(let x=0;x<=W;x+=W/4){ g.beginPath(); g.moveTo(x,0); g.lineTo(x,H); g.stroke(); } for(let y=0;y<=H;y+=H/8){ g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke(); }
+  g.fillStyle='rgba(255,250,235,.9)'; g.font='bold 20px serif'; g.textAlign='center'; g.globalAlpha=.55; g.fillText(['SANCTUS','LUX','AVE','PAX'][seedv%4],W/2,H*.12); g.globalAlpha=1;
+  return toTex(c,true,false); }
+TX.gE=glassTex(['#7fd0ff','#3aa0e0','#2a78c8','#2aa080','#3ac070','#1a5aa0','#80e0c0'],11);
+TX.gW=glassTex(['#ffe060','#ffb030','#ff7a20','#e84020','#c02028','#ff9040','#ffd040'],22);
+TX.gA=glassTex(['#fff4c0','#ffe080','#f8c850','#fff8e0','#f0d070'],33);
+TX.gS=glassTex(['#ffd060','#ff9a40','#8ad0ff','#ffe8a0','#60b0e8'],44);
+// 天井（双曲面のヴォールト：光の目と金と緑のモザイク）
+TX.vault=(()=>{ const W=512,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#e8dcc4','#c8b898',50,4);
+  const holes=[[W/2,W/2,90],[0,0,60],[W,0,60],[0,W,60],[W,W,60],[W/2,0,36],[0,W/2,36],[W,W/2,36],[W/2,W,36]];
+  for(const [x,y,r] of holes){ for(let k=6;k>=0;k--){ const rr=r*(1+k*.22); g.strokeStyle=k%2?'rgba(110,140,70,.5)':'rgba(200,160,70,.55)'; g.lineWidth=5; g.beginPath(); g.arc(x,y,rr,0,TAU); g.stroke(); }
+    const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'#fffdf4'); gr.addColorStop(.55,'#fff2c8'); gr.addColorStop(.8,'#d8b860'); gr.addColorStop(1,'#7a9a50'); g.fillStyle=gr; g.beginPath(); g.arc(x,y,r,0,TAU); g.fill();
+    for(let k=0;k<12;k++){ const a=k/12*TAU; g.fillStyle=k%2?'#4a8a40':'#c89a30'; g.beginPath(); g.ellipse(x+Math.cos(a)*r*1.6,y+Math.sin(a)*r*1.6,r*.22,r*.09,a,0,TAU); g.fill(); } }
+  return toTex(c); })();
+TX.floorIn=(()=>{ const W=512,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#c9c1b2','#a8a092',60,4); g.strokeStyle='rgba(60,55,50,.35)'; g.lineWidth=2;
+  for(let i=0;i<=4;i++){ g.beginPath(); g.moveTo(i*W/4,0); g.lineTo(i*W/4,W); g.stroke(); g.beginPath(); g.moveTo(0,i*W/4); g.lineTo(W,i*W/4); g.stroke(); }
+  g.strokeStyle='rgba(120,90,60,.35)'; g.lineWidth=6; g.beginPath(); g.arc(W/2,W/2,W*.3,0,TAU); g.stroke(); speckle(g,W,W,3000,.06); return toTex(c); })();
+function colTex(base,vein,spots){ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,base,vein,30,5,.4); if(spots) blotch(g,W,W,spots,'#fff',.12,6); speckle(g,W,W,2500,.12); return toTex(c); }
+TX.porphyry=colTex('#7a2a22','#4a1814',80); TX.basalt=colTex('#5c5c62','#3a3a42',40); TX.granite=colTex('#a8a49c','#7c786e',200); TX.sandCol=colTex('#d6c09a','#b49a72',30);
+// 歩道のパノット（花模様の敷石）
+TX.panot=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#a8a39a','#8c877e',30,4); const s=W/4;
+  for(let y=0;y<4;y++) for(let x=0;x<4;x++){ const cx=x*s+s/2,cy=y*s+s/2; g.strokeStyle='rgba(40,38,34,.45)'; g.lineWidth=2; g.strokeRect(x*s+1,y*s+1,s-2,s-2); g.fillStyle='rgba(60,56,50,.35)'; for(let k=0;k<4;k++){ const a=k*PI/2+PI/4; g.beginPath(); g.ellipse(cx+Math.cos(a)*s*.2,cy+Math.sin(a)*s*.2,s*.16,s*.08,a,0,TAU); g.fill(); } g.beginPath(); g.arc(cx,cy,s*.06,0,TAU); g.fill(); }
+  return toTex(c); })();
+TX.asph=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#4a4a4c','#36363a',8,3); speckle(g,W,W,4000,.15); return toTex(c); })();
+TX.gravel=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#c8b48a','#a8946c',12,4); speckle(g,W,W,6000,.2); return toTex(c); })();
+TX.grass=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#5a7a38','#3a5a24',20,5); speckle(g,W,W,5000,.15); return toTex(c); })();
+TX.leaf=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#4a6a2a','#2a4218',10,5); blotch(g,W,W,120,'#7a9a40',.35,10); blotch(g,W,W,60,'#1a2a10',.35,12); return toTex(c); })();
+// アシャンプラの建物の外壁（窓とバルコニー）
+function facadeTex(base,shut){ const W=256,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); noiseFill(g,W,H,base,'#9a8a70',40,4); const fx=3,fy=2;
+  for(let j=0;j<fy;j++) for(let i=0;i<fx;i++){ const x=i*W/fx+W/fx*.25, y=j*H/fy+H/fy*.18, w=W/fx*.5, h=H/fy*.62;
+    g.fillStyle='rgba(40,40,46,.9)'; g.fillRect(x,y,w,h); g.fillStyle=shut; g.fillRect(x-w*.18,y,w*.18,h); g.fillRect(x+w,y,w*.18,h);
+    g.fillStyle='rgba(30,30,30,.85)'; g.fillRect(x-w*.25,y+h-4,w*1.5,5); for(let k=0;k<7;k++) g.fillRect(x-w*.25+k*w*1.5/6,y+h-18,2,14); g.fillRect(x-w*.25,y+h-18,w*1.5,2);
+    g.fillStyle='rgba(255,255,255,.12)'; g.fillRect(x+2,y+2,w*.4,h*.4); }
+  g.fillStyle='rgba(0,0,0,.15)'; g.fillRect(0,H/2-3,W,3); g.fillRect(0,H-3,W,3); return toTex(c); }
+TX.fac=[facadeTex('#d8c8a8','#5a7a5a'),facadeTex('#e4d6bc','#7a5a3a'),facadeTex('#cfb894','#3a5a6a'),facadeTex('#e0cfb0','#6a6a4a')];
+// 夜の窓（発光用）
+TX.facN=(()=>{ const W=256,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,H); for(let j=0;j<2;j++) for(let i=0;i<3;i++){ if(rnd()<.45){ g.fillStyle=pick(['#ffcc80','#ffe0a0','#ffd090','#c0d8ff']); g.fillRect(i*W/3+W/3*.25,j*H/2+H/2*.18,W/3*.5,H/2*.62); } } return toTex(c); })();
+TX.roof=(()=>{ const W=128,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#8a8076','#6a625a',12,3); blotch(g,W,W,10,'#b87a5a',.3,14); return toTex(c); })();
+TX.bronze=(()=>{ const W=256,H=512,c=makeCanvas(W,H),g=c.getContext('2d'); noiseFill(g,W,H,'#5a4a2a','#2a2010',30,4); g.fillStyle='rgba(220,190,120,.75)'; g.font='bold 15px serif';
+  const L='ABCDEFGHILMNOPQRSTUVXYZ'; for(let y=18;y<H;y+=19){ let s=''; for(let i=0;i<26;i++) s+=rnd()<.16?' ':L[Math.floor(rnd()*L.length)]; g.fillText(s,6+rnd()*6,y); } blotch(g,W,H,30,'#6a8a5a',.25,20); return toTex(c); })();
+TX.sotoo=(()=>{ const W=256,H=512,c=makeCanvas(W,H),g=c.getContext('2d'); g.fillStyle='#3a2e18'; g.fillRect(0,0,W,H);
+  for(let i=0;i<220;i++){ const x=rnd()*W,y=rnd()*H,r=R(8,22),a=rnd()*TAU; g.fillStyle=pick(['#5a7a2a','#7a9a3a','#3a5a20','#8a7a30','#6a8a40']); g.beginPath(); g.ellipse(x,y,r,r*.4,a,0,TAU); g.fill(); g.strokeStyle='rgba(30,40,10,.6)'; g.lineWidth=1; g.beginPath(); g.moveTo(x-Math.cos(a)*r,y-Math.sin(a)*r); g.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r); g.stroke(); }
+  for(let i=0;i<26;i++){ const x=rnd()*W,y=rnd()*H; g.fillStyle=pick(['#c8a030','#a03020','#2a6aa0','#e8d060']); g.beginPath(); g.ellipse(x,y,5,8,rnd()*3,0,TAU); g.fill(); g.strokeStyle='#1a1408'; g.lineWidth=1.5; g.beginPath(); g.moveTo(x-7,y-6); g.lineTo(x+7,y+6); g.moveTo(x+7,y-6); g.lineTo(x-7,y+6); g.stroke(); }
+  return toTex(c); })();
+TX.water=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); noiseFill(g,W,W,'#3a6a70','#1a3a44',20,4); return toTex(c,false); })();
+TX.glow=(()=>{ const W=128,c=makeCanvas(W,W),g=c.getContext('2d'); const gr=g.createRadialGradient(W/2,W/2,0,W/2,W/2,W/2); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.3,'rgba(255,255,255,.45)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,W,W); return toTex(c,true,false); })();
+TX.pool=(()=>{ const W=256,c=makeCanvas(W,W),g=c.getContext('2d'); g.clearRect(0,0,W,W); for(let i=0;i<40;i++){ const x=R(40,W-40),y=R(40,W-40),r=R(12,40); const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); } return toTex(c,true,false); })();
+TX.beam=(()=>{ const W=64,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); const gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,'rgba(255,255,255,.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,W,H); const gx=g.createLinearGradient(0,0,W,0); gx.addColorStop(0,'rgba(0,0,0,1)'); gx.addColorStop(.25,'rgba(0,0,0,0)'); gx.addColorStop(.75,'rgba(0,0,0,0)'); gx.addColorStop(1,'rgba(0,0,0,1)'); g.globalCompositeOperation='destination-out'; g.fillStyle=gx; g.fillRect(0,0,W,H); return toTex(c,true,false); })();
+TX.cloud=(()=>{ const W=256,c=makeCanvas(W,W/2),g=c.getContext('2d'); for(let i=0;i<26;i++){ const x=R(40,W-40),y=R(30,W/2-24),r=R(18,44); const gr=g.createRadialGradient(x,y,0,x,y,r); gr.addColorStop(0,'rgba(255,255,255,.5)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(x-r,y-r,2*r,2*r); } return toTex(c,true,false); })();
+seed=777;
+
+/* ============================================================
+   材質
+   ============================================================ */
+const std=o=>new THREE.MeshStandardMaterial(o);
+const M={
+  sand:std({map:TX.sand,roughness:.92}), sandL:std({map:TX.sandL,roughness:.9}), old:std({map:TX.old,roughness:.95}), oldB:std({map:TX.oldB,roughness:.95}), grey:std({map:TX.grey,roughness:.85}),
+  drip:std({map:TX.drip,bumpMap:TX.drip,bumpScale:.06,roughness:.95}),
+  louN:std({map:TX.louN.map,alphaMap:TX.louN.alpha,alphaTest:.5,side:THREE.DoubleSide,roughness:.95}),
+  louP:std({map:TX.louP.map,alphaMap:TX.louP.alpha,alphaTest:.5,side:THREE.DoubleSide,roughness:.95}),
+  louG:std({map:TX.louG.map,alphaMap:TX.louG.alpha,alphaTest:.5,side:THREE.DoubleSide,roughness:.95}),
+  mosN:std({map:TX.mosN,roughness:.3,metalness:.15}), mosP:std({map:TX.mosP,roughness:.3,metalness:.15}), mosG:std({map:TX.mosG,roughness:.3,metalness:.15}),
+  trenc:std({map:TX.trenc,roughness:.35,metalness:.05}), white:std({color:'#f4f0e6',roughness:.35}), gold:std({color:'#d8a838',roughness:.3,metalness:.9}),
+  red:std({color:'#c02828',roughness:.35}), green:std({color:'#3a6a2a',roughness:.6}), cypress:std({map:TX.leaf,color:'#6a9a4a',roughness:.85}),
+  vault:std({map:TX.vault,roughness:.8,emissive:'#ffffff',emissiveMap:TX.vault,emissiveIntensity:.25,side:THREE.DoubleSide}),
+  floorIn:std({map:TX.floorIn,roughness:.45,metalness:.05}),
+  porphyry:std({map:TX.porphyry,roughness:.35,metalness:.1}), basalt:std({map:TX.basalt,roughness:.45}), granite:std({map:TX.granite,roughness:.5}), sandCol:std({map:TX.sandCol,roughness:.75}),
+  wallIn:std({map:TX.sandL,roughness:.92,color:'#f2ead8'}),
+  panot:std({map:TX.panot,roughness:.95}), asph:std({map:TX.asph,roughness:1}), gravel:std({map:TX.gravel,roughness:1}), grass:std({map:TX.grass,roughness:1}),
+  curb:std({color:'#9a948a',roughness:.9}), leaf:std({map:TX.leaf,roughness:.95}), bark:std({color:'#6a5a48',roughness:1}),
+  roof:std({map:TX.roof,roughness:.95}), iron:std({color:'#24262a',roughness:.5,metalness:.7}), steelY:std({color:'#e8b820',roughness:.5,metalness:.3}), steelR:std({color:'#c83a20',roughness:.5,metalness:.3}),
+  scaff:std({color:'#8a8c90',roughness:.5,metalness:.6}), net:new THREE.MeshStandardMaterial({color:'#6a8aa0',transparent:true,opacity:.35,side:THREE.DoubleSide,depthWrite:false,roughness:1}),
+  bronze:std({map:TX.bronze,roughness:.4,metalness:.8,color:'#c8a070'}), sotoo:std({map:TX.sotoo,roughness:.45,metalness:.6}),
+  wood:std({color:'#7a5a3a',roughness:.7}), plank:std({color:'#a88a60',roughness:.9}),
+  glassStar:new THREE.MeshStandardMaterial({color:'#f8fcff',emissive:'#fff6d8',emissiveIntensity:.4,roughness:.1,metalness:.2,transparent:true,opacity:.92}),
+  crossG:new THREE.MeshStandardMaterial({color:'#f4f6f8',emissive:'#ffffff',emissiveIntensity:.15,roughness:.15,metalness:.5}),
+  lamp:new THREE.MeshBasicMaterial({color:'#fff0c8'}),
+  candle:std({color:'#f4ead2',emissive:'#ffbe60',emissiveIntensity:.8}),
+};
+const GLASSM={};
+for(const k of ['gE','gW','gA','gS']) GLASSM[k]=new THREE.MeshBasicMaterial({map:TX[k],side:THREE.DoubleSide,toneMapped:false});
+M.facs=TX.fac.map(t=>std({map:t,roughness:.9}));
+M.facLit=new THREE.MeshBasicMaterial({map:TX.facN,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:0,polygonOffset:true,polygonOffsetFactor:-1});
+// 夜のライトアップ用に、石の材質へ弱い自己発光を入れる
+const STONEMATS=[M.sand,M.sandL,M.old,M.oldB,M.grey,M.drip,M.louN,M.louP,M.louG,M.trenc];
+STONEMATS.forEach(m=>{ m.emissive=new THREE.Color('#ffb870'); m.emissiveMap=m.map; m.emissiveIntensity=0; });
+
+/* ============================================================
+   時代ごとのグループ（26＝1926年 / n＝現在 / k＝完成予想）
+   ============================================================ */
+let ERA='n';
+const EG={}; function eg(k){ if(k==='26nk') return scene; if(!EG[k]){ EG[k]=new THREE.Group(); EG[k].userData.era=k; scene.add(EG[k]); } return EG[k]; }
+function eraOn(k){ return !k||k.indexOf(ERA)>=0; }
+let BG='26nk'; function inEra(k,fn){ const o=BG; BG=k; fn(); BG=o; }
+
+/* ---------- まとめ描画（world UV で自動タイル / own＝元のUV） ---------- */
+class Batch{ constructor(mat,tile,own,group){ this.mat=mat; this.tile=tile||2.5; this.own=own; this.group=group; this.g=[]; this.cast=true; }
+  add(geo,mtx){ let g=geo.index?geo.toNonIndexed():geo.clone(); if(mtx) g.applyMatrix4(mtx); this.g.push(g); return this; }
+  build(){ if(!this.g.length) return null; let n=0; this.g.forEach(g=>n+=g.attributes.position.count);
+    const P=new Float32Array(n*3),N=new Float32Array(n*3),U=new Float32Array(n*2); let o=0; const t=this.tile;
+    for(const g of this.g){ if(!g.attributes.normal) g.computeVertexNormals(); const p=g.attributes.position.array,nn=g.attributes.normal.array,c=g.attributes.position.count, uv=g.attributes.uv?g.attributes.uv.array:null;
+      P.set(p,o*3); N.set(nn,o*3);
+      if(this.own&&uv) U.set(uv,o*2);
+      else for(let i=0;i<c;i++){ const x=p[i*3],y=p[i*3+1],z=p[i*3+2],nx=Math.abs(nn[i*3]),ny=Math.abs(nn[i*3+1]),nz=Math.abs(nn[i*3+2]);
+        let u,v; if(ny>=nx&&ny>=nz){u=x/t;v=z/t;} else if(nx>=nz){u=z/t;v=y/t;} else {u=x/t;v=y/t;} U[(o+i)*2]=u;U[(o+i)*2+1]=v; }
+      o+=c; }
+    const G=new THREE.BufferGeometry(); G.setAttribute('position',new THREE.BufferAttribute(P,3)); G.setAttribute('normal',new THREE.BufferAttribute(N,3)); G.setAttribute('uv',new THREE.BufferAttribute(U,2)); G.computeBoundingSphere();
+    const m=new THREE.Mesh(G,this.mat); m.castShadow=this.cast; m.receiveShadow=true; m.matrixAutoUpdate=false; eg(this.group).add(m); this.g=[]; return m; } }
+const BK={};
+const TILE={panot:3,asph:8,grass:6,gravel:5,floorIn:7.5,sand:4,sandL:4,old:5,oldB:4,grey:5,drip:3,porphyry:3,basalt:3,granite:3,sandCol:3,roof:6,vault:15,wallIn:5,trenc:4,leaf:3};
+const OWNUV={louN:1,louP:1,louG:1,mosN:1,mosP:1,mosG:1,facs0:1,facs1:1,facs2:1,facs3:1,facLit:1,bronze:1,sotoo:1};
+function bk(name,group){ group=group||BG; const key=group+':'+name; if(!BK[key]){ let mat=M[name]; if(!mat&&name.startsWith('facs')) mat=M.facs[+name[4]]; if(!mat&&GLASSM[name]) mat=GLASSM[name]; BK[key]=new Batch(mat,TILE[name]||2.5,OWNUV[name]||GLASSM[name],group); if(GLASSM[name]||name==='facLit') BK[key].cast=false; } return BK[key]; }
+function TM(x,y,z,ry,sx,sy,sz,rx,rz){ const q=new THREE.Quaternion().setFromEuler(new THREE.Euler(rx||0,ry||0,rz||0,'YXZ')); return new THREE.Matrix4().compose(V3(x,y,z),q,V3(sx||1,sy||1,sz||1)); }
+const BOXG=new THREE.BoxGeometry(1,1,1);
+function boxAt(bt,x0,x1,y0,y1,z0,z1){ bk(bt).add(BOXG,TM((x0+x1)/2,(y0+y1)/2,(z0+z1)/2,0,x1-x0,y1-y0,z1-z0)); }
+function lathe(pts,seg){ return new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(Math.max(.001,p[0]),p[1])),seg||16); }
+// 2点間に円柱を渡す
+const _up=V3(0,1,0);
+function strut(bt,a,b,r0,r1,seg){ const d=V3(b[0]-a[0],b[1]-a[1],b[2]-a[2]); const L=d.length(); const g=new THREE.CylinderGeometry(r1==null?r0:r1,r0,L,seg||8,1,true); const q=new THREE.Quaternion().setFromUnitVectors(_up,d.clone().normalize()); const m=new THREE.Matrix4().compose(V3((a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2),q,V3(1,1,1)); bk(bt).add(g,m); }
+
+/* ---------- 当たり判定・床 ---------- */
+const COLL=[]; const CG=new Map(), CGS=4;
+function gridAdd(b,x0,x1,z0,z1){ for(let gx=Math.floor(x0/CGS);gx<=Math.floor(x1/CGS);gx++) for(let gz=Math.floor(z0/CGS);gz<=Math.floor(z1/CGS);gz++){ const k=gx+','+gz; if(!CG.has(k)) CG.set(k,[]); CG.get(k).push(b); } }
+function collide(x0,x1,z0,z1,y0,y1){ const b={x0:Math.min(x0,x1),x1:Math.max(x0,x1),z0:Math.min(z0,z1),z1:Math.max(z0,z1),y0:y0==null?-99:y0,y1:y1==null?999:y1,g:BG}; COLL.push(b); gridAdd(b,b.x0,b.x1,b.z0,b.z1); return b; }
+function collideCyl(cx,cz,r,y0,y1){ const b={k:'c',cx,cz,r,y0:y0==null?-99:y0,y1:y1==null?999:y1,g:BG,x0:cx-r,x1:cx+r,z0:cz-r,z1:cz+r}; COLL.push(b); gridAdd(b,b.x0,b.x1,b.z0,b.z1); return b; }
+function collideRing(cx,cz,r,t,y0,y1,gaps){ const b={k:'r',cx,cz,r,t,y0,y1,gaps:gaps||[],g:BG,x0:cx-r-t,x1:cx+r+t,z0:cz-r-t,z1:cz+r+t}; COLL.push(b); gridAdd(b,b.x0,b.x1,b.z0,b.z1); return b; }
+function solidBox(bt,x0,x1,y0,y1,z0,z1){ boxAt(bt,x0,x1,y0,y1,z0,z1); collide(x0,x1,z0,z1,y0,y1); }
+const RAD=.28;
+function angIn(a,a0,a1){ let d=((a-a0)%TAU+TAU)%TAU, w=((a1-a0)%TAU+TAU)%TAU; return d<=w; }
+function blocked(x,z,yf){ const l=CG.get(Math.floor(x/CGS)+','+Math.floor(z/CGS)); if(!l) return false;
+  for(const b of l){ if(!eraOn(b.g)) continue; if(yf+1.65<b.y0||yf+.35>b.y1) continue;
+    if(b.k==='c'){ if(Math.hypot(x-b.cx,z-b.cz)<b.r+RAD) return true; }
+    else if(b.k==='r'){ const d=Math.hypot(x-b.cx,z-b.cz); if(Math.abs(d-b.r)<b.t/2+RAD){ const a=Math.atan2(z-b.cz,x-b.cx); let open=false; for(const g of b.gaps){ if(yf>=g[2]-.1&&yf<=g[3]&&angIn(a,g[0],g[1])){ open=true; break; } } if(!open) return true; } }
+    else if(x>b.x0-RAD&&x<b.x1+RAD&&z>b.z0-RAD&&z<b.z1+RAD) return true; }
+  return false; }
+const SLABS=[], RAMPS=[], HELIX=[], HOLES=[];
+function slab(x0,x1,z0,z1,y){ SLABS.push({x0:Math.min(x0,x1),x1:Math.max(x0,x1),z0:Math.min(z0,z1),z1:Math.max(z0,z1),y,g:BG}); }
+function inR(r,x,z,m){ m=m||0; return x>r.x0-m&&x<r.x1+m&&z>r.z0-m&&z<r.z1+m; }
+function surfaceAt(x,z,yf){ let best=-1e9; const lim=yf+.62;
+  let hole=false; for(const h of HOLES) if(eraOn(h.g)&&inR(h,x,z)){ hole=true; break; }
+  if(!hole&&0<=lim) best=0;
+  for(const s of SLABS) if(x>=s.x0&&x<=s.x1&&z>=s.z0&&z<=s.z1&&s.y<=lim&&s.y>best&&eraOn(s.g)) best=s.y;
+  for(const r of RAMPS) if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1&&eraOn(r.g)){ const t=r.ax==='z'?(z-r.z0)/(r.z1-r.z0):(x-r.x0)/(r.x1-r.x0); const y=r.ya+(r.yb-r.ya)*t; if(y<=lim&&y>best) best=y; }
+  for(const h of HELIX){ const d=Math.hypot(x-h.cx,z-h.cz); if(d<h.r0||d>h.r1) continue; const a=Math.atan2(z-h.cz,x-h.cx); const t=((h.dir*(a-h.a0))%TAU+TAU)%TAU/TAU; let k=Math.ceil((h.yTop-lim)/h.pitch-t); if(k<0) k=0; const y=h.yTop-(t+k)*h.pitch; if(y>=h.yBot-.01&&y<=lim&&y>best) best=y; }
+  return best; }
+
+/* ============================================================
+   形を作る道具
+   ============================================================ */
+// 断面が波打つ回転体（柱・塔）。fn(t)→半径、flutes＝縦溝の数、twist＝ねじれ、cut＝切り抜き [a0,a1,y0,y1]
+function profGeo(fn,y0,y1,n,seg,o){ o=o||{}; const fl=o.flutes||0, dp=o.depth||0, tw=o.twist||0, cut=o.cut, star=o.star;
+  const pos=[],uv=[],idx=[];
+  for(let i=0;i<=n;i++){ const t=i/n, y=y0+(y1-y0)*t, r=fn(t);
+    for(let j=0;j<=seg;j++){ const th=j/seg*TAU; let rr=r;
+      if(fl) rr=r*(1+dp*Math.cos(fl*(th+tw*t)));
+      if(star){ const ph=t*PI/star.n*(star.turn||1), A=star.a*(1-t*(star.fade||0)); rr=r*(1-A+A*Math.max(Math.cos(star.n*(th-ph)),Math.cos(star.n*(th+ph)))); }
+      pos.push(Math.cos(th)*rr,y,Math.sin(th)*rr); uv.push(j/seg*(o.su||1),t*(o.sv||1)); } }
+  for(let i=0;i<n;i++) for(let j=0;j<seg;j++){ if(cut){ const th=(j+.5)/seg*TAU, y=y0+(y1-y0)*(i+.5)/n; let skip=false; for(const c of cut){ if(y>c[2]&&y<c[3]&&angIn(th,c[0],c[1])){ skip=true; break; } } if(skip) continue; }
+    const a=i*(seg+1)+j,b=a+seg+1; idx.push(a,b,a+1,b,b+1,a+1); }
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); g.setIndex(idx); g.computeVertexNormals(); return g; }
+function at(x,y,z,ry,s){ return TM(x,y,z,ry||0,s||1,s||1,s||1); }
+const SPH=new THREE.SphereGeometry(1,12,8), SPH_LO=new THREE.SphereGeometry(1,8,5), ICO0=new THREE.IcosahedronGeometry(1,0), ICO=new THREE.IcosahedronGeometry(1,1), CONE=new THREE.ConeGeometry(1,1,10), CYL8=new THREE.CylinderGeometry(1,1,1,8), CYL12=new THREE.CylinderGeometry(1,1,1,12);
+function ball(bt,x,y,z,r,sy){ bk(bt).add(r<1.2?SPH_LO:SPH,TM(x,y,z,0,r,r*(sy||1),r)); }
+function cone(bt,x,y0,z,r,h,seg){ bk(bt).add(seg?new THREE.ConeGeometry(1,1,seg):CONE,TM(x,y0+h/2,z,0,r,h,r)); }
+function cyl(bt,x,y0,z,r,h,seg){ bk(bt).add(seg===12?CYL12:CYL8,TM(x,y0+h/2,z,0,r,h,r)); }
+// 切妻屋根（棟が axis 方向）
+function gable(bt,x0,x1,z0,z1,y,H,axis){ const s=new THREE.Shape(); if(axis==='z'){ const w=x1-x0; s.moveTo(-w/2,0); s.lineTo(w/2,0); s.lineTo(0,H); s.closePath(); const g=new THREE.ExtrudeGeometry(s,{depth:z1-z0,bevelEnabled:false}); bk(bt).add(g,TM((x0+x1)/2,y,z0)); }
+  else { const w=z1-z0; s.moveTo(-w/2,0); s.lineTo(w/2,0); s.lineTo(0,H); s.closePath(); const g=new THREE.ExtrudeGeometry(s,{depth:x1-x0,bevelEnabled:false}); bk(bt).add(g,TM(x0,y,(z0+z1)/2,PI/2).multiply(new THREE.Matrix4().makeScale(1,1,1))); } }
+// 壁（開口つき）。axis 'z'＝x=c の位置で z 方向にのびる壁、'x'＝z=c で x 方向
+function wallSeg(axis,c,a0,a1,y0,y1,t,mat,ops){ ops=(ops||[]).map(o=>[Math.max(a0,o[0]),Math.min(a1,o[1]),o[2],o[3]]).filter(o=>o[1]>o[0]);
+  const cuts=new Set([a0,a1]); ops.forEach(o=>{ cuts.add(o[0]); cuts.add(o[1]); }); const xs=[...cuts].sort((a,b)=>a-b);
+  for(let i=0;i<xs.length-1;i++){ const s=xs[i],e=xs[i+1]; if(e-s<1e-3) continue; const m=(s+e)/2; const cov=ops.filter(o=>o[0]<=m&&o[1]>=m).map(o=>[Math.max(y0,o[2]),Math.min(y1,o[3])]).sort((a,b)=>a[0]-b[0]);
+    let yy=y0; const solid=[]; for(const [p,q] of cov){ if(p>yy) solid.push([yy,p]); yy=Math.max(yy,q); } if(yy<y1) solid.push([yy,y1]);
+    for(const [p,q] of solid){ if(q-p<.01) continue; if(axis==='z'){ boxAt(mat,c-t/2,c+t/2,p,q,s,e); if(p<2.2) collide(c-t/2,c+t/2,s,e,p,q); } else { boxAt(mat,s,e,p,q,c-t/2,c+t/2); if(p<2.2) collide(s,e,c-t/2,c+t/2,p,q); } } } }
+// ステンドグラス（内側は明るい色、外側は暗く反射。夜は外にも色がにじむ）
+for(const k in GLASSM) GLASSM[k].side=THREE.FrontSide;
+for(const k of ['gE','gW','gA','gS']){ M['o'+k]=std({color:'#3a4e5c',roughness:.2,metalness:.55,emissive:'#ffffff',emissiveMap:TX[k],emissiveIntensity:0}); OWNUV['o'+k]=1; }
+const PLANE=new THREE.PlaneGeometry(1,1);
+const WINLIST=[];
+function pane(axis,c,a0,a1,y0,y1,pal,inward){ // inward: 室内側の向き(+1/-1)
+  const w=a1-a0,h=y1-y0,am=(a0+a1)/2,ym=(y0+y1)/2; let ry; if(axis==='z') ry=inward>0?PI/2:-PI/2; else ry=inward>0?0:PI;
+  const p=axis==='z'?[c+inward*.06,ym,am]:[am,ym,c+inward*.06], q=axis==='z'?[c-inward*.06,ym,am]:[am,ym,c-inward*.06];
+  bk(pal).add(PLANE,TM(p[0],p[1],p[2],ry,w,h,1)); bk('o'+pal).add(PLANE,TM(q[0],q[1],q[2],ry+PI,w,h,1)); WINLIST.push({x:p[0],y:ym,z:p[2],w,h,pal,axis,inward});
+  if(w>2.5&&h>5){ // 外側：放物線アーチの石の枠と、丸窓の飾り
+    const f=archFrame(w,h); const o=axis==='z'?[c-inward*.62,y0,am]:[am,y0,c-inward*.62]; bk(FRAMEMAT).add(f,TM(o[0],o[1],o[2],ry+PI)); bk(FRAMEMAT).add(f,TM(o[0]+(axis==='z'?inward*1.24:0),o[1],o[2]+(axis==='z'?0:inward*1.24),ry)); } }
+let FRAMEMAT='sand';
+const ARCHC={};
+function archFrame(w,h){ const k=w.toFixed(1)+'x'+h.toFixed(1); if(ARCHC[k]) return ARCHC[k]; const W=w/2+.45; const s=new THREE.Shape(); s.moveTo(-W,0); s.lineTo(W,0); s.lineTo(W,h+.5); s.lineTo(-W,h+.5); s.closePath();
+  const hole=new THREE.Path(); hole.moveTo(-w/2,.02); hole.lineTo(w/2,.02); const hs=h*.62; hole.lineTo(w/2,hs); for(let i=1;i<=12;i++){ const u=w/2-w*i/12; hole.lineTo(u,hs+(h-hs)*(1-Math.pow(2*u/w,2))); } hole.lineTo(-w/2,.02); s.holes.push(hole);
+  return ARCHC[k]=new THREE.ExtrudeGeometry(s,{depth:.35,bevelEnabled:false,curveSegments:2}); }
+// 回転した壁パネル（円弧の壁）
+function arcWall(cx,cz,r,a0,a1,n,y0,y1,t,mat,wins,pal,cutAbove){ for(let i=0;i<n;i++){ const aa=a0+(a1-a0)*i/n, ab=a0+(a1-a0)*(i+1)/n, am=(aa+ab)/2; const L=2*r*Math.sin(Math.abs(ab-aa)/2)+.08; const x=cx+Math.cos(am)*r, z=cz+Math.sin(am)*r; const ry=-am+PI/2;
+    const ys=[[y0,y1]]; let segs=[[y0,y1]]; if(wins){ segs=[]; let yy=y0; for(const [p,q] of wins){ segs.push([yy,p]); yy=q; } segs.push([yy,y1]); }
+    for(const [p,q] of segs) if(q-p>.01) bk(mat).add(BOXG,TM(x,(p+q)/2,z,ry,L,q-p,t));
+    if(wins&&pal) for(const [p,q] of wins){ const wl=L*(r>15?.42:.62); const ix=cx+Math.cos(am)*(r-.06), iz=cz+Math.sin(am)*(r-.06), ox=cx+Math.cos(am)*(r+.06), oz=cz+Math.sin(am)*(r+.06);
+      // 開口の左右の柱
+      const side=(L-wl)/2; for(const sgn of [-1,1]){ const sx=x+Math.cos(ry)*sgn*(wl/2+side/2), sz=z-Math.sin(ry)*sgn*(wl/2+side/2); bk(mat).add(BOXG,TM(sx,(p+q)/2,sz,ry,side,q-p,t)); }
+      bk(pal).add(PLANE,TM(ix,(p+q)/2,iz,ry+PI,wl,q-p,1)); bk('o'+pal).add(PLANE,TM(ox,(p+q)/2,oz,ry,wl,q-p,1)); WINLIST.push({x:ix,y:(p+q)/2,z:iz,w:wl,h:q-p,pal,arc:[cx,cz]});
+      if(wl>2.5){ const f=archFrame(wl,q-p); bk(mat).add(f,TM(cx+Math.cos(am)*(r+t/2),p,cz+Math.sin(am)*(r+t/2),ry)); bk(mat).add(f,TM(cx+Math.cos(am)*(r-t/2),p,cz+Math.sin(am)*(r-t/2),ry+PI)); } } } }
+// 天井（ヴォールト）：下向きの面
+function vaultRect(x0,x1,z0,z1,y){ bk('vault').add(PLANE,TM((x0+x1)/2,y,(z0+z1)/2,0,x1-x0,z1-z0,1,PI/2)); }
+function vaultArc(cx,cz,r0,r1,a0,a1,y){ const g=new THREE.RingGeometry(r0,r1,24,1,0,a1-a0); bk('vault').add(g,TM(cx,y,cz,0,1,1,1,PI/2).multiply(new THREE.Matrix4().makeRotationZ(a0))); }
+
+/* ============================================================
+   聖堂の平面（交差部の中心＝原点、身廊は南へ）
+   ============================================================ */
+const NAVE={x0:-22.5,x1:22.5,z0:15,z1:52}, TRANS={x0:-30,x1:30,z0:-15,z1:15}, BAY={x0:-22,x1:22,z0:-20,z1:-15}, APC={x:0,z:-20}, APR=22;
+function inBasilica(x,z,m){ m=m||0; if(inR(NAVE,x,z,m)||inR(TRANS,x,z,m)||inR(BAY,x,z,m)) return true; if(z<-20+m&&Math.hypot(x-APC.x,z-APC.z)<APR+m) return true; return false; }
+function inApseOnly(x,z){ return z<-15&&(inR(BAY,x,z)||Math.hypot(x,z+20)<APR); }
+const H_AISLE=30, H_NAVE=45, H_CROSS=60, H_APSE=75;
+
+/* ---------- 床 ---------- */
+inEra('nk',()=>{
+  bk('floorIn').add(PLANE,TM(0,.1,(NAVE.z0+NAVE.z1)/2,0,45,NAVE.z1-NAVE.z0,1,-PI/2));
+  bk('floorIn').add(PLANE,TM(0,.1,0,0,60,30,1,-PI/2));
+  bk('floorIn').add(PLANE,TM(0,.1,-17.5,0,44,5,1,-PI/2));
+  { const g=new THREE.CircleGeometry(APR,32,0,PI); bk('floorIn').add(g,TM(0,.1,-20,0,1,1,1,-PI/2)); }
+});
+
+/* ---------- 壁（身廊・翼廊） ---------- */
+const BAYS=[18.75,26.25,33.75,41.25,48.75];
+inEra('nk',()=>{
+  for(const s of [-1,1]){ const x=s*22.5;
+    // 側廊の外壁（2段の窓）
+    const ops=[]; BAYS.forEach(zc=>{ ops.push([zc-2.1,zc+2.1,3,12.5]); ops.push([zc-2.1,zc+2.1,15.5,27]); }); ops.push([BAYS[1]-.9,BAYS[1]+.9,0,3.2]);
+    wallSeg('z',x,NAVE.z0,NAVE.z1,0,H_AISLE,1.2,'sandL',ops); BAYS.forEach(zc=>{ pane('z',x,zc-2.1,zc+2.1,3,12.5,s>0?'gE':'gW',-s); pane('z',x,zc-2.1,zc+2.1,15.5,27,s>0?'gE':'gW',-s); });
+    // 高窓（クリアストーリー）
+    const o2=BAYS.map(zc=>[zc-2.4,zc+2.4,32,43]); wallSeg('z',s*7.5,NAVE.z0,NAVE.z1,H_AISLE,H_NAVE,.8,'sandL',o2); BAYS.forEach(zc=>pane('z',s*7.5,zc-2.4,zc+2.4,32,43,s>0?'gE':'gW',-s));
+    // 翼廊の外壁（z=±15、|x| 22.5〜30）と高窓（z=±7.5）
+    for(const zs of [-1,1]){ const z=zs*15; const xa=s>0?22.5:-30, xb=s>0?30:-22.5; if(zs<0){ /* 後陣側 */ }
+      wallSeg('x',z,Math.min(xa,xb),Math.max(xa,xb),0,H_AISLE,1.2,'sandL',[[s*26.25-2,s*26.25+2,4,26]].map(o=>[Math.min(o[0],o[1]),Math.max(o[0],o[1]),o[2],o[3]])); pane('x',z,s*26.25-2,s*26.25+2,4,26,s>0?'gE':'gW',-zs);
+      const xa2=s>0?15:-30, xb2=s>0?30:-15; wallSeg('x',zs*7.5,Math.min(xa2,xb2),Math.max(xa2,xb2),H_AISLE,H_NAVE,.8,'sandL',[[s*18.75-2.4,s*18.75+2.4,32,43],[s*26.25-2.4,s*26.25+2.4,32,43]].map(o=>[Math.min(o[0],o[1]),Math.max(o[0],o[1]),o[2],o[3]]));
+      for(const xc of [18.75,26.25]) pane('x',zs*7.5,s*xc-2.4,s*xc+2.4,32,43,s>0?'gE':'gW',-zs); }
+    // 後陣の手前の湾（x=±22、z -20〜-15）
+    wallSeg('z',s*22,-20,-15,0,H_AISLE,1.2,'sandL',[[-19.2,-15.8,4,26]]); pane('z',s*22,-19.2,-15.8,4,26,'gA',-s);
+    wallSeg('z',s*9,-20,-15,H_AISLE,H_APSE,.8,'sandL',[[-19,-16,34,70]]); pane('z',s*9,-19,-16,34,70,'gA',-s);
+  }
+  // 交差部の上の壁（60m まで）
+  for(const s of [-1,1]){
+    wallSeg('z',s*15,-15,-7.5,H_AISLE,H_CROSS,.8,'sandL',[[-13.5,-9,34,56]]); wallSeg('z',s*15,7.5,15,H_AISLE,H_CROSS,.8,'sandL',[[9,13.5,34,56]]); wallSeg('z',s*15,-7.5,7.5,H_NAVE,H_CROSS,.8,'sandL',[[-5,5,47,58]]);
+    pane('z',s*15,-13.5,-9,34,56,'gS',-s); pane('z',s*15,9,13.5,34,56,'gS',-s); pane('z',s*15,-5,5,47,58,'gS',-s);
+    const xa=s>0?7.5:-15, xb=s>0?15:-7.5; wallSeg('x',15,xa,xb,H_AISLE,H_CROSS,.8,'sandL',[[xa+1.5,xb-1.5,34,56]]); pane('x',15,xa+1.5,xb-1.5,34,56,'gS',-1);
+    const xc=s>0?9:-15, xd=s>0?15:-9; wallSeg('x',-15,xc,xd,H_AISLE,H_CROSS,.8,'sandL',[]);
+  }
+  wallSeg('x',15,-7.5,7.5,H_NAVE,H_CROSS,.8,'sandL',[[-5,5,47,58]]); pane('x',15,-5,5,47,58,'gS',-1);
+  wallSeg('x',-15,-9,9,H_CROSS,H_APSE,.8,'sandL',[]);
+  // 栄光のファサードの内側の壁（z=52）
+  const dg=[[-2.6,2.6,0,9.5],[-12.9,-9.6,0,7],[9.6,12.9,0,7],[-20.2,-17.3,0,6],[17.3,20.2,0,6]];
+  wallSeg('x',52,-22.5,22.5,0,H_AISLE,1.4,'sandL',dg.concat([[-6,6,12,28],[-13.5,-9,10,27],[9,13.5,10,27],[-21,-16.5,9,27],[16.5,21,9,27]]));
+  pane('x',52,-6,6,12,28,'gS',-1); pane('x',52,-13.5,-9,10,27,'gS',-1); pane('x',52,9,13.5,10,27,'gS',-1); pane('x',52,-21,-16.5,9,27,'gS',-1); pane('x',52,16.5,21,9,27,'gS',-1);
+  wallSeg('x',52,-7.5,7.5,H_AISLE,H_NAVE,1,'sandL',[[-5.5,5.5,31,43]]); pane('x',52,-5.5,5.5,31,43,'gS',-1);
+});
+// 翼廊の端（生誕・受難のファサードの裏の壁、x=±30）
+const TDOORS=[[-2.6,2.6,0,9.5],[-14.4,-11,0,7.2],[11,14.4,0,7.2]];
+inEra('26nk',()=>{ wallSeg('z',30,-15,15,0,H_AISLE,1.2,'oldB',TDOORS.concat([[-7.6,-6.4,0,2.5],[6.4,7.6,0,2.5],[-5.5,5.5,13,28],[-13.5,-9.5,10,27],[9.5,13.5,10,27]])); });
+inEra('nk',()=>{ pane('z',30,-5.5,5.5,13,28,'gE',-1); pane('z',30,-13.5,-9.5,10,27,'gE',-1); pane('z',30,9.5,13.5,10,27,'gE',-1);
+  wallSeg('z',30,-7.5,7.5,H_AISLE,H_NAVE,1,'sandL',[[-5,5,31,43]]); pane('z',30,-5,5,31,43,'gE',-1);
+  wallSeg('z',-30,-15,15,0,H_AISLE,1.2,'sand',TDOORS.concat([[-5.5,5.5,13,28],[-13.5,-9.5,10,27],[9.5,13.5,10,27]])); pane('z',-30,-5.5,5.5,13,28,'gW',1); pane('z',-30,-13.5,-9.5,10,27,'gW',1); pane('z',-30,9.5,13.5,10,27,'gW',1);
+  wallSeg('z',-30,-7.5,7.5,H_AISLE,H_NAVE,1,'sandL',[[-5,5,31,43]]); pane('z',-30,-5,5,31,43,'gW',1); });
+
+/* ---------- 後陣（ガウディの時代から） ---------- */
+const APW=[[3.5,12.5],[15.5,26.5]];
+inEra('26nk',()=>{ arcWall(0,-20,APR,PI,TAU,7,0,H_AISLE,1.4,'old',APW,'gA'); collideRing(0,-20,APR,1.4,-1,H_AISLE,[[0,PI,-99,999]]);
+  // 後陣の小尖塔（ゴシック風の尖塔と麦の穂）
+  for(let i=0;i<=7;i++){ const a=PI+PI*i/7, x=Math.cos(a)*(APR+.9), z=-20+Math.sin(a)*(APR+.9); cyl('old',x,0,z,.9,H_AISLE+2,8); cone('old',x,H_AISLE+2,z,1.1,13,8); for(let k=0;k<5;k++){ const yy=H_AISLE+4+k*2.2; for(const d of [0,PI/2,PI,3*PI/2]) ball('old',x+Math.cos(d)*(1-k*.17),yy,z+Math.sin(d)*(1-k*.17),.32,1.6); } ball('gold',x,H_AISLE+15.3,z,.45,2.2); }
+  for(let i=0;i<7;i++){ const a=PI+PI*(i+.5)/7, x=Math.cos(a)*(APR+.2), z=-20+Math.sin(a)*(APR+.2); // 各礼拝堂の破風
+    const s=new THREE.Shape(); s.moveTo(-4.4,0); s.lineTo(4.4,0); s.lineTo(0,9); s.closePath(); bk('old').add(new THREE.ExtrudeGeometry(s,{depth:1,bevelEnabled:false}),TM(x,H_AISLE,z,-a+PI/2+PI)); }
+});
+inEra('nk',()=>{ // 後陣の中央（75m まで）
+  arcWall(0,-20,9,PI,TAU,7,H_AISLE,H_APSE,.8,'sandL',[[34,70]],'gA');
+  vaultArc(0,-20,9,APR,PI,TAU,H_AISLE); vaultRect(-22,-9,-20,-15,H_AISLE); vaultRect(9,22,-20,-15,H_AISLE);
+  { const g=new THREE.CircleGeometry(9,24,PI,PI); bk('vault').add(g,TM(0,H_APSE,-20,0,1,1,1,PI/2)); } vaultRect(-9,9,-20,-15,H_APSE);
+  // 天井
+  vaultRect(-7.5,7.5,15,52,H_NAVE); vaultRect(7.5,22.5,15,52,H_AISLE); vaultRect(-22.5,-7.5,15,52,H_AISLE);
+  vaultRect(15,30,-7.5,7.5,H_NAVE); vaultRect(-30,-15,-7.5,7.5,H_NAVE); vaultRect(15,30,7.5,15,H_AISLE); vaultRect(15,30,-15,-7.5,H_AISLE); vaultRect(-30,-15,7.5,15,H_AISLE); vaultRect(-30,-15,-15,-7.5,H_AISLE);
+  vaultRect(-15,15,-15,15,H_CROSS);
+  // 外の屋根
+  const RY=H_AISLE+.3; for(const s of [-1,1]){ boxAt('sand',Math.min(s*7.9,s*23),Math.max(s*7.9,s*23),RY,RY+.8,15,52.5); boxAt('sand',Math.min(s*15,s*30.6),Math.max(s*15,s*30.6),RY,RY+.8,7.9,15.5); boxAt('sand',Math.min(s*15,s*30.6),Math.max(s*15,s*30.6),RY,RY+.8,-15.5,-7.9); boxAt('sand',Math.min(s*9.4,s*22),Math.max(s*9.4,s*22),RY,RY+.8,-20,-15); }
+  { const g=new THREE.RingGeometry(9.3,APR+.6,24,1,0,PI); bk('sand').add(g,TM(0,RY+.8,-20,0,1,1,1,-PI/2)); }
+  gable('sand',-8.2,8.2,15,53,H_NAVE+.3,13,'z'); gable('sand',15,30.6,-8.2,8.2,H_NAVE+.3,13,'x'); gable('sand',-30.6,-15,-8.2,8.2,H_NAVE+.3,13,'x');
+  boxAt('sand',-15.4,15.4,H_CROSS+.3,H_CROSS+1.4,-15.4,15.4);
+  { const g=new THREE.CylinderGeometry(9.4,9.4,1,24,1,false,PI/2,PI); bk('sand').add(g,TM(0,H_APSE+.8,-20)); boxAt('sand',-9.4,9.4,H_APSE+.3,H_APSE+1.3,-20,-15); }
+  // 身廊の外壁の上の「果物の小尖塔」
+  const FR=['red','gold','mosP','mosN','white'];
+  const pinns=[]; for(const s of [-1,1]){ for(const z of [15,22.5,30,37.5,45,52]) pinns.push([s*23.2,z]); for(const x of [22.5,30]){ pinns.push([s*x,15.8]); pinns.push([s*x,-15.8]); } pinns.push([s*30.8,7.5]); pinns.push([s*30.8,-7.5]); }
+  pinns.forEach(([x,z],i)=>{ cyl('sand',x,H_AISLE,z,.8,3,8); cone('sand',x,H_AISLE+3,z,.9,7,8); const y=H_AISLE+10.5; for(let k=0;k<7;k++){ const a=k/6*TAU; ball(FR[(i+k)%FR.length],x+(k?Math.cos(a)*.7:0),y+(k?R(-.2,.4):.8),z+(k?Math.sin(a)*.7:0),k?.55:.75); } });
+  // 高窓の上の小尖塔
+  for(const s of [-1,1]) for(const z of [15,22.5,30,37.5,45,52]){ cone('sand',s*8.2,H_NAVE,z,.6,6,8); ball('mosG',s*8.2,H_NAVE+6.4,z,.55); }
+});
+
+/* ============================================================
+   柱（枝分かれする樹の柱）
+   ============================================================ */
+const COLS=[];
+function treeColumn(x,z,R,top,mat,o){ o=o||{}; const n=o.n||6; const yk=o.knot||top*.48;
+  const g=profGeo(t=>R*(1-.12*t),0,yk,12,30,{star:{n,a:.14,fade:.6,turn:1.6}}); bk(mat).add(g,TM(x,0,z));
+  bk(mat).add(SPH_LO,TM(x,yk,z,0,R*1.35,R*1.7,R*1.35)); // 節（こぶ）
+  collideCyl(x,z,R*1.05,-1,yk);
+  const sp=o.spread||3.1, nb=o.branches||4;
+  const ends=[]; for(let k=0;k<nb;k++){ const a=k/nb*TAU+PI/4+(o.rot||0); ends.push([x+Math.cos(a)*sp,z+Math.sin(a)*sp]); }
+  if(o.center) ends.push([x,z]);
+  ends.forEach(([ex,ez],k)=>{ const isC=o.center&&k===ends.length-1; const ytop=isC?top:(o.btop?o.btop(ex,ez):top);
+    if(o.second&&!isC){ const mx=x+(ex-x)*.55, mz=z+(ez-z)*.55, my=yk+(ytop-yk)*.55; strut(mat,[x,yk+R*.8,z],[mx,my,mz],R*.55,R*.42,8); bk(mat).add(SPH_LO,TM(mx,my,mz,0,R*.6,R*.75,R*.6));
+      for(let q=0;q<3;q++){ const a=q/3*TAU+k; strut(mat,[mx,my,mz],[ex+Math.cos(a)*1.4,ytop,ez+Math.sin(a)*1.4],R*.3,R*.2,6); } }
+    else strut(mat,[x,yk+R*.8,z],[ex,ytop,ez],R*(isC?.6:.5),R*(isC?.45:.32),8);
+    bk('gold').add(new THREE.TorusGeometry(R*.55,.08,3,10),TM(ex,ytop-.25,ez,0,1,1,1,PI/2)); });
+  COLS.push({x,z,R,top,mat}); }
+function topAt(x,z){ if(Math.abs(x)<=15&&Math.abs(z)<=15) return H_CROSS; if(z>15&&Math.abs(x)<=7.5) return H_NAVE; if(Math.abs(z)<=7.5&&Math.abs(x)>15) return H_NAVE; if(z<-15&&Math.hypot(x,z+20)<9) return H_APSE; if(z<-15&&Math.abs(x)<9) return H_APSE; return H_AISLE; }
+inEra('nk',()=>{
+  // 交差部：4本の斑岩（赤）＝4人の福音書記者
+  for(const sx of [-1,1]) for(const sz of [-1,1]) treeColumn(sx*7.5,sz*7.5,1.05,H_CROSS,'porphyry',{n:6,knot:30,spread:3.6,second:true,center:true});
+  // 交差部を囲む玄武岩
+  for(const [x,z] of [[15,15],[-15,15],[15,-15],[-15,-15],[15,7.5],[-15,7.5],[15,-7.5],[-15,-7.5],[7.5,15],[-7.5,15],[7.5,-15],[-7.5,-15]]) treeColumn(x,z,.85,H_NAVE,'basalt',{n:5,knot:22,spread:3.1,btop:(ex,ez)=>Math.min(H_CROSS,Math.max(H_AISLE,topAt(ex,ez)))});
+  // 身廊：内側は花崗岩、外側は砂岩
+  for(const z of [22.5,30,37.5,45]){ for(const s of [-1,1]){ treeColumn(s*7.5,z,.72,H_NAVE,'granite',{n:6,knot:21,spread:3.1,btop:(ex,ez)=>Math.abs(ex)<7.5?H_NAVE:H_AISLE}); treeColumn(s*15,z,.6,H_AISLE,'sandCol',{n:4,knot:15,spread:3}); } }
+  // 翼廊
+  for(const s of [-1,1]) for(const zs of [-1,1]) treeColumn(s*22.5,zs*7.5,.72,H_NAVE,'granite',{n:6,knot:21,spread:3.1,btop:(ex,ez)=>Math.abs(ez)<7.5?H_NAVE:H_AISLE});
+  // 後陣
+  for(let i=0;i<=6;i++){ const a=PI+PI*i/6, x=Math.cos(a)*9, z=-20+Math.sin(a)*9; treeColumn(x,z,.7,H_APSE,'granite',{n:6,knot:28,spread:2.6,second:true,btop:(ex,ez)=>Math.hypot(ex,ez+20)<9?H_APSE:H_AISLE}); }
+  for(const s of [-1,1]) treeColumn(s*9,-15,.75,H_APSE,'basalt',{n:5,knot:28,spread:2.6,second:true,btop:(ex,ez)=>Math.abs(ex)<9?H_APSE:H_AISLE});
+});
+
+/* ============================================================
+   鐘塔（12使徒の塔）・福音書記者・聖母マリア・イエスの塔
+   ============================================================ */
+M.oldD=M.old.clone(); M.oldD.side=THREE.DoubleSide; M.sandD=M.sand.clone(); M.sandD.side=THREE.DoubleSide; STONEMATS.push(M.oldD,M.sandD); TILE.oldD=5; TILE.sandD=4;
+const TOWERS=[];
+function towerR(o,y){ const t=Math.min(1,Math.max(0,(y-o.hb)/(o.hp-o.hb))); return o.r0*(1-.5*Math.pow(t,3.2)); }
+function bellTower(o){ o.hb=o.hb||20; o.hp=o.H*.76; const K=o.kind, lou='lou'+K, mos='mos'+K, base=K==='N'?(o.climb?'oldD':'old'):(o.climb?'sandD':'sand'); TOWERS.push(o);
+  const topY=o.partial||o.hp;
+  // 足元（八角形の台）
+  const rb=o.r0*1.12; const bg=profGeo(()=>rb,0,o.hb,2,8,{cut:o.climb?[[PI-.5,PI+.5,-1,2.6]]:null}); bk(base).add(bg,TM(o.x,0,o.z,PI/8));
+  if(o.climb){ bk(base).add(new THREE.BoxGeometry(1.6,.4,1.6),TM(o.x-rb+.3,2.8,o.z)); }
+  // 羽板の胴
+  const n=28, cut=o.cuts||null;
+  const g=profGeo(t=>towerR(o,o.hb+(topY-o.hb)*t),o.hb,topY,n,28,{su:4,sv:(topY-o.hb)/40,cut});
+  bk(lou).add(g,TM(o.x,0,o.z));
+  // 輪の帯
+  for(const y of [o.hb,o.hb+(o.hp-o.hb)*.33,o.hb+(o.hp-o.hb)*.66]) if(y<topY) bk(base).add(new THREE.TorusGeometry(towerR(o,y)+.12,.22,6,28),TM(o.x,y,o.z,0,1,1,1,PI/2));
+  if(o.climb) collideRing(o.x,o.z,2.62,.25,-1,o.H*.7,o.gaps); else collideCyl(o.x,o.z,rb,-1,o.hb);
+  if(o.partial){ // 1926年の建設途中：上に足場
+    for(let k=0;k<10;k++){ const a=k/10*TAU, r=towerR(o,topY)+.8; strut('scaff',[o.x+Math.cos(a)*r,topY-8,o.z+Math.sin(a)*r],[o.x+Math.cos(a)*r,topY+4,o.z+Math.sin(a)*r],.06); }
+    for(const y of [topY-6,topY-2,topY+2]) bk('scaff').add(new THREE.TorusGeometry(towerR(o,topY)+.8,.05,4,20),TM(o.x,y,o.z,0,1,1,1,PI/2));
+    strut('wood',[o.x,topY,o.z],[o.x,topY+9,o.z],.18); strut('wood',[o.x,topY+9,o.z],[o.x+5,topY+7,o.z],.12); return; }
+  // 頂（ヴェネツィアン・ガラスのモザイク）
+  const r1=towerR(o,o.hp), H=o.H, y1=o.hp, y2=y1+H*.05, y3=H-H*.075;
+  bk(mos).add(profGeo(t=>r1*(1-.35*t),y1,y2,4,16),TM(o.x,0,o.z));
+  bk(mos).add(profGeo(t=>r1*.65*(1-.45*t)+.2*Math.sin(t*PI*3),y2,y3,14,18,{flutes:6,depth:.18,twist:1.2}),TM(o.x,0,o.z));
+  // 司教冠（ミトラ）：十字の羽根と白い玉、輪、十字
+  const w=r1*1.5, h=H*.06, yc=y3+h/2;
+  for(const ry of [0,PI/2]){ bk(mos).add(BOXG,TM(o.x,yc,o.z,ry,w,h,.35)); }
+  for(let k=0;k<4;k++){ const a=k*PI/2; for(const f of [.5,.95]) ball('white',o.x+Math.cos(a)*w/2,yc-h/2+h*f,o.z+Math.sin(a)*w/2,.32); }
+  bk('gold').add(new THREE.TorusGeometry(r1*.55,.16,6,18),TM(o.x,y3+h*.35,o.z,0,1,1,1,PI/2));
+  ball('white',o.x,H-.6,o.z,.6); for(const ry of [0,PI/2]){ bk('gold').add(BOXG,TM(o.x,H+.6,o.z,ry,1.5,.22,.22)); } bk('gold').add(BOXG,TM(o.x,H+.4,o.z,0,.22,2,.22));
+}
+// 縦溝のある大きな塔（福音書記者・マリア・イエス）
+function bigTower(cx,cz,y0,prof,mat,fl){ for(const [ya,yb,fn,m] of prof){ bk(m||mat).add(profGeo(fn,ya,yb,Math.max(4,Math.round((yb-ya)/4)),fl?36:24,{flutes:fl||0,depth:.045}),TM(cx,0,cz)); } }
+
+/* ---------- 生誕のファサード（東） ---------- */
+// 1926年：完成していたのは聖バルナバの塔だけ。ほかの3本は工事中
+const NT=[{z:-18.6,H:98,r0:3.3,nm:'マティア'},{z:-7,H:107,r0:3.6,nm:'ユダ（タダイ）',climb:'lift'},{z:7,H:107,r0:3.6,nm:'シモン',climb:'spiral'},{z:18.6,H:98,r0:3.3,nm:'バルナバ'}];
+const LIFT={x:34,z:-7,top:65}, SPIRAL={x:34,z:7,top:65};
+NT.forEach((t,i)=>{ const base={x:34,z:t.z,H:t.H,r0:t.r0,kind:'N',hb:20,climb:t.climb};
+  if(t.climb==='lift') base.gaps=[[PI-.45,PI+.45,-1,2.6],[PI/2-.5,PI/2+.5,63.2,67.5]], base.cuts=[[PI/2-.45,PI/2+.45,64.6,67.6]];
+  if(t.climb==='spiral') base.gaps=[[PI-.45,PI+.45,-1,2.6],[-PI/2-.5,-PI/2+.5,63.2,67.5]], base.cuts=[[-PI/2-.45,-PI/2+.45,64.6,67.6]];
+  if(i===3){ inEra('26nk',()=>bellTower(base)); }
+  else { inEra('nk',()=>bellTower(Object.assign({},base))); inEra('26',()=>bellTower(Object.assign({},base,{partial:[78,70,62][i],climb:null,gaps:null,cuts:null}))); } });
+// 正面の3つの門（希望・慈愛・信仰）
+const NPORT=[{zc:13.15,w:4.4,h:15,ht:30,nm:'希望の門'},{zc:0,w:6.6,h:19,ht:44,nm:'慈愛の門'},{zc:-13.15,w:4.4,h:15,ht:30,nm:'信仰の門'}];
+inEra('26nk',()=>{
+  NPORT.forEach(p=>{ const W=p.zc===0?7.2:4.9; const s=new THREE.Shape(); s.moveTo(-W/2,0); s.lineTo(W/2,0); s.lineTo(W/2,p.h+2); s.lineTo(W*.18,p.ht*.85); s.lineTo(0,p.ht); s.lineTo(-W*.18,p.ht*.85); s.lineTo(-W/2,p.h+2); s.closePath();
+    const hole=new THREE.Path(); hole.moveTo(-p.w/2,0); for(let k=0;k<=16;k++){ const u=-p.w/2+p.w*k/16; hole.lineTo(u,p.h*(1-Math.pow(2*u/p.w,2))*.35+p.h*.65); } hole.lineTo(p.w/2,0); hole.closePath(); s.holes.push(hole);
+    const g=new THREE.ExtrudeGeometry(s,{depth:7.6,bevelEnabled:false,curveSegments:4}); bk('drip').add(g,TM(38,0,p.zc,-PI/2));
+    collide(30.6,38,p.zc-W/2,p.zc-p.w/2,0,30); collide(30.6,38,p.zc+p.w/2,p.zc+W/2,0,30);
+    // とけた蝋のような彫刻：つらら・こぶ
+    for(let k=0;k<30;k++){ const u=R(-p.w/2,p.w/2), v=p.h*(1-Math.pow(2*u/p.w,2))*.35+p.h*.65; cone('drip',38.2-R(0,.6),v-R(.8,2.2),p.zc+u,R(.15,.35),R(.8,2.2)); }
+    for(let k=0;k<70;k++){ const u=R(-W/2,W/2), v=R(p.h*.5,p.ht*.9); if(Math.abs(u)<p.w/2&&v<p.h) continue; const xx=38.3+R(-.1,.5); bk('drip').add(ICO0,TM(xx,v,p.zc+u,rnd()*3,R(.3,.9),R(.5,1.6),R(.3,.9))); }
+    // 門の中の人物群（石の像）
+    for(let k=0;k<(p.zc===0?7:4);k++){ const u=(k-(p.zc===0?3:1.5))*.85; statue('old',36.2,p.h*.62,p.zc+u,1.5,-PI/2); }
+  });
+  // 門を分ける柱と、その足元の亀（海側＝海亀、山側＝陸亀）
+  for(const [zc,sea] of [[6.6,1],[-6.6,0]]){ bk('old').add(profGeo(t=>.55,0,13,12,16,{flutes:8,depth:.12,twist:3}),TM(37.2,1.2,zc)); turtle(37.2,0,zc,sea); }
+  // 糸杉（生命の樹）と白い鳩
+  { const cx=35.6, y0=44, h=16; bk('cypress').add(profGeo(t=>3.2*Math.pow(1-t,.9)*(1+.12*Math.sin(t*PI*10))+.2,y0,y0+h,20,20,{flutes:9,depth:.15}),TM(cx,0,0));
+    for(let k=0;k<26;k++){ const a=rnd()*TAU, t=R(.05,.9), r=3.2*Math.pow(1-t,.9)+.4; dove(cx+Math.cos(a)*r,y0+t*h,Math.sin(a)*r,a); }
+    bk('red').add(BOXG,TM(cx,y0+h+1.4,0,PI/4,.35,2.4,.35,0,0)); bk('red').add(BOXG,TM(cx,y0+h+1.4,0,0,.3,2.4,.3,0,PI/4)); bk('red').add(BOXG,TM(cx,y0+h+1.4,0,0,.3,2.4,.3,0,-PI/4)); ball('white',cx,y0+h+3,0,.5); }
+  // 門の上の壁と破風（塔のあいだ）
+  boxAt('drip',30.6,36.4,30,46,-3.4,3.4); boxAt('drip',30.6,36,24,36,-15.2,-10.6); boxAt('drip',30.6,36,24,36,10.6,15.2);
+  for(let k=0;k<120;k++){ const z=R(-15,15), y=R(22,46); if(Math.abs(z)>3.4&&y>36) continue; bk('drip').add(ICO0,TM(R(36,37),y,z,rnd()*3,R(.3,.8),R(.6,1.8),R(.3,.8))); }
+  // ベツレヘムの星
+  star8('gold',38.6,21.5,0,1.6);
+  // 天使の楽団（ラッパ）
+  for(const z of [-3.6,3.6]) for(const y of [16,23]){ statue('old',38.2,y,z,1.6,-PI/2); strut('gold',[38.6,y+1.3,z],[39.6,y+1.9,z],.04,.18); }
+});
+// 扉：現在は外尾悦郎の植物と虫のブロンズの扉（開いた状態）、1926年は木の仮扉
+inEra('nk',()=>{ for(const p of [{z:0,w:5.2,h:9.5},{z:12.7,w:3.4,h:7.2},{z:-12.7,w:3.4,h:7.2}]){ for(const s of [-1,1]){ const lw=p.w/2; bk('sotoo').add(PLANE,TM(30.6+lw/2,p.h/2,p.z+s*(p.w/2-.05),s>0?PI:0,lw,p.h,1)); bk('sotoo').add(PLANE,TM(30.6+lw/2,p.h/2,p.z+s*(p.w/2-.07),s>0?0:PI,lw,p.h,1)); } } });
+inEra('26',()=>{ for(const p of [{z:0,w:5.2,h:9.5},{z:12.7,w:3.4,h:7.2},{z:-12.7,w:3.4,h:7.2}]) for(const s of [-1,1]) boxAt('plank',30.7,30.7+p.w/2,0,p.h,p.z+s*(p.w/2)-.06,p.z+s*(p.w/2)+.06); });
+// 生誕の塔の橋（65m）
+inEra('nk',()=>{ const y=LIFT.top; boxAt('old',33.1,34.9,y-.4,y,-4.6,4.6); slab(33.1,34.9,-4.6,4.6,y); for(const x of [33.05,34.95]){ boxAt('iron',x-.04,x+.04,y+1.02,y+1.1,-4.6,4.6); boxAt('iron',x-.02,x+.02,y+.5,y+.54,-4.6,4.6); collide(x-.05,x+.05,-4.6,4.6,y,y+1.2); } for(let z=-4.4;z<=4.4;z+=1.1) for(const x of [33.05,34.95]) boxAt('iron',x-.025,x+.025,y,y+1.1,z-.025,z+.025);
+  slab(LIFT.x-2.4,LIFT.x+2.4,LIFT.z-2.4,LIFT.z+2.4,y); boxAt('oldD',LIFT.x-2.5,LIFT.x+2.5,y-.4,y,LIFT.z-2.5,LIFT.z+2.5);
+  // 螺旋階段（中心は吹き抜け）
+  HELIX.push({cx:SPIRAL.x,cz:SPIRAL.z,r0:.62,r1:2.5,yTop:y,yBot:0,pitch:65/19.75,a0:-PI/2,dir:1,g:BG});
+  const steps=Math.round(19.75*18); for(let i=0;i<steps;i++){ const t=i/steps, a=-PI/2+t*19.75*TAU, yy=y-t*65; const m=TM(SPIRAL.x+Math.cos(a)*1.55,yy-.12,SPIRAL.z+Math.sin(a)*1.55,-a,1.9,.24,.62); bk('oldB').add(BOXG,m); }
+  { // 中心の吹き抜けを囲む、らせん状の低い手すり壁（巻き貝のように見える）
+    const pos=[],idx=[]; const turns=19.75, N=Math.round(turns*28); for(let i=0;i<=N;i++){ const t=i/N, a=-PI/2+t*turns*TAU, yy=y-t*65; const cx=SPIRAL.x+Math.cos(a)*.62, cz=SPIRAL.z+Math.sin(a)*.62; pos.push(cx,yy-.3,cz, cx,yy+.95,cz); } for(let i=0;i<N;i++){ const k=i*2; idx.push(k,k+2,k+1,k+1,k+2,k+3); }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); bk('sandD').add(g); }
+  collideRing(SPIRAL.x,SPIRAL.z,.58,.1,-1,y+2,[]);
+  for(const T of [SPIRAL,LIFT]) bk('oldD').add(profGeo(()=>2.7,0,20,6,20,{cut:[[PI-.45,PI+.45,-1,2.6]]}),TM(T.x,0,T.z));
+  // エレベーター
+  bk('iron').add(new THREE.BoxGeometry(1.8,2.6,.1),TM(LIFT.x-1.6,1.3,LIFT.z-.95,PI/2)); bk('steelY').add(new THREE.BoxGeometry(.3,.3,.05),TM(LIFT.x-2.4,1.3,LIFT.z+1.15,PI/2));
+});
+function turtle(x,y,z,sea){ ball(sea?'green':'old',x,y+.55,z,1.2,.45); ball('old',x+1.2,y+.55,z,.35); for(const [dx,dz] of [[.7,.8],[.7,-.8],[-.7,.8],[-.7,-.8]]) bk('old').add(SPH,TM(x+dx,y+.3,z+dz,0,sea?.7:.35,.15,sea?.3:.35)); }
+function dove(x,y,z,a){ bk('white').add(SPH,TM(x,y,z,a,.32,.16,.14)); for(const s of [-1,1]) bk('white').add(BOXG,TM(x,y+.08,z,a,.12,.03,.5,s*.4,0).multiply(new THREE.Matrix4().makeTranslation(0,0,s*.25))); }
+function star8(bt,x,y,z,r){ for(let k=0;k<8;k++){ const a=k/8*TAU; bk(bt).add(new THREE.ConeGeometry(r*.25,r*(k%2?1:1.7),4),TM(x,y,z,0,1,1,1,0,0).multiply(new THREE.Matrix4().makeRotationX(a)).multiply(new THREE.Matrix4().makeTranslation(0,r*.5,0))); } ball(bt,x,y,z,r*.3); }
+function statue(bt,x,y,z,h,ry,angular){ if(angular){ bk(bt).add(new THREE.CylinderGeometry(h*.16,h*.24,h*.75,4),TM(x,y+h*.37,z,ry+PI/4)); bk(bt).add(new THREE.BoxGeometry(h*.2,h*.24,h*.22),TM(x,y+h*.86,z,ry+.3)); }
+  else { bk(bt).add(new THREE.CylinderGeometry(h*.14,h*.24,h*.78,8),TM(x,y+h*.39,z,ry)); ball(bt,x,y+h*.88,z,h*.12); } }
+
+/* ---------- 受難のファサード（西） ---------- */
+const PT=[{z:-18.6,H:107,r0:3.3},{z:-7,H:112,r0:3.6},{z:7,H:112,r0:3.6},{z:18.6,H:107,r0:3.3}];
+inEra('nk',()=>{
+  PT.forEach(t=>bellTower({x:-34,z:t.z,H:t.H,r0:t.r0,kind:'P',hb:20}));
+  // 骨のように傾いた6本の柱
+  for(const z of [-15,-9,-3,3,9,15]){ const lean=z*.05; strut('sand',[-44,0,z*1.08],[-40.5,10,z],1.05,.9,10); strut('sand',[-40.5,10,z],[-38.5,22,z+lean],.9,.75,10); ball('sand',-40.5,10,z,1.2,1.3); ball('sand',-38.5,22,z,1,1.2); collideCyl(-44,z*1.08,1.1,-1,8); }
+  // 大きなひさし（ペディメント）とその上の18本の骨の柱
+  bk('sand').add(new THREE.BoxGeometry(9,1.6,42),TM(-37,22.6,0,0,1,1,1,0,-.18)); collide(-41.5,-32.5,-21,21,21.5,24);
+  for(let k=0;k<18;k++){ const z=-17+k*2; bk('sand').add(profGeo(t=>.38+.22*Math.pow(Math.sin(t*PI),.6)+.12*Math.cos(t*PI*4),24,32.5,10,10),TM(-39,0,z)); }
+  boxAt('sand',-40,-36,32.5,33.5,-18.5,18.5);
+  { const s=new THREE.Shape(); s.moveTo(-17,0); s.lineTo(17,0); s.lineTo(0,18); s.closePath(); bk('sand').add(new THREE.ExtrudeGeometry(s,{depth:3,bevelEnabled:false}),TM(-36,33.5,0,PI/2)); }
+  boxAt('sand',-33.5,-30.6,9,30,-15,15);
+  // 角ばった彫刻（受難の物語）
+  [[-37.2,3.5,-12],[-37.2,3.5,-10.8],[-37.2,3.5,-9.6],[-37.2,3.5,10],[-37.2,3.5,11.2],[-36.8,12.5,-6],[-36.8,12.5,6],[-36.8,12.5,0],[-36.8,16.5,-11],[-36.8,16.5,11]].forEach(([x,y,z])=>statue('grey',x,y,z,2.2,PI/2,true));
+  // 十字架のキリスト（中央・上）
+  bk('grey').add(BOXG,TM(-37.5,27,0,0,.4,7,.4)); bk('grey').add(BOXG,TM(-37.5,29,0,0,.4,.4,4)); statue('grey',-37.9,24.6,0,2.6,PI/2,true);
+  // 鞭打ちの柱（中央の扉の前）
+  bk('grey').add(CYL8,TM(-33,1.6,0,0,.35,3.2,.35)); statue('grey',-33.5,0,0,2.1,PI/2,true);
+  // ブロンズの扉（福音書の文字）
+  for(const p of [{z:0,w:5.2,h:9.5},{z:12.7,w:3.4,h:7.2},{z:-12.7,w:3.4,h:7.2}]) for(const s of [-1,1]){ const lw=p.w/2; bk('bronze').add(PLANE,TM(-30.6-lw/2,p.h/2,p.z+s*(p.w/2-.05),s>0?PI:0,lw,p.h,1)); bk('bronze').add(PLANE,TM(-30.6-lw/2,p.h/2,p.z+s*(p.w/2-.07),s>0?0:PI,lw,p.h,1)); }
+});
+
+/* ---------- 栄光のファサード（南・正面） ---------- */
+const GT=[{x:-18.6,H:112,r0:3.5},{x:-7,H:120,r0:3.8},{x:7,H:120,r0:3.8},{x:18.6,H:112,r0:3.5}];
+inEra('nk',()=>{ // 正面の扉（主の祈りのブロンズ扉）
+  boxAt('bronze',-2.55,2.55,0,9.5,52.72,52.8); collide(-2.6,2.6,52.6,52.9,0,9.5);
+  bk('bronze').add(PLANE,TM(0,4.75,52.82,0,5.1,9.5,1)); bk('bronze').add(PLANE,TM(0,4.75,52.68,PI,5.1,9.5,1));
+  { const s=new THREE.Shape(); s.moveTo(-22.5,0); s.lineTo(22.5,0); s.lineTo(0,14); s.closePath(); bk('sand').add(new THREE.ExtrudeGeometry(s,{depth:1.4,bevelEnabled:false}),TM(0,H_NAVE,51.3)); }
+});
+inEra('n',()=>{ // 工事中：足場とクレーン、立ち上がり途中の柱
+  for(let x=-26;x<=26;x+=3.4) for(const z of [54,60]) strut('scaff',[x,0,z],[x,40,z],.06);
+  for(let y=2;y<=40;y+=4) for(const z of [54,60]) strut('scaff',[-26,y,z],[26,y,z],.05);
+  for(let y=4;y<=40;y+=8) for(let x=-26;x<=26;x+=3.4) strut('scaff',[x,y,54],[x,y,60],.05);
+  bk('net').add(PLANE,TM(0,20,60.1,0,52,40,1)); bk('net').add(PLANE,TM(0,20,60.1,PI,52,40,1));
+  for(const x of [-21,-14,-7,0,7,14,21]){ cyl('sandL',x,0,57,1.1,R(6,15),12); }
+  crane(-30,64,110,PI*.8); crane(28,62,96,PI*.15); crane(-46,-34,84,-PI*.4);
+  for(let k=0;k<6;k++){ const x=R(-20,17); boxAt('plank',x,x+3,0,1.2,58,59.5); } // 資材
+});
+inEra('k',()=>{ // 完成予想：4本の鐘塔と、7本の柱の大きな玄関（ポーチ）
+  GT.forEach(t=>bellTower({x:t.x,z:58,H:t.H,r0:t.r0,kind:'G',hb:22}));
+  for(let i=0;i<7;i++){ const x=-21+i*7; strut('sandL',[x*1.05,0,66],[x,26,63],1.2,.9,12); collideCyl(x*1.05,66,1.25,-1,6); cone('mosG',x,26,63,1.3,4,8); ball('gold',x,30.4,63,.5); }
+  boxAt('sandL',-25,25,26,28,56,66); for(let k=0;k<16;k++){ const x=-22.5+k*3; bk('sandL').add(profGeo(t=>.9*(1-t)+.35*Math.cos(t*PI*2)**2,28,36+(k%3)*2,8,10),TM(x,0,64)); ball('glassStar',x,37+(k%3)*2,64,.45); }
+  { const s=new THREE.Shape(); s.moveTo(-26,0); s.lineTo(26,0); s.lineTo(0,24); s.closePath(); bk('sandL').add(new THREE.ExtrudeGeometry(s,{depth:2,bevelEnabled:false}),TM(0,28,60)); }
+  for(let k=0;k<24;k++) bk('white').add(ICO,TM(R(-18,18),R(30,46),R(61.5,62.5),rnd()*3,R(1,2.4),R(.7,1.4),R(.5,1))); // 雲
+});
+function crane(x,z,H,ry){ for(const [dx,dz] of [[-1,-1],[1,-1],[1,1],[-1,1]]) strut('steelY',[x+dx*.9,0,z+dz*.9],[x+dx*.9,H,z+dz*.9],.09); for(let y=0;y<H;y+=4) for(const [a,b] of [[[-1,-1],[1,-1]],[[1,-1],[1,1]],[[1,1],[-1,1]],[[-1,1],[-1,-1]]]) strut('steelY',[x+a[0]*.9,y,z+a[1]*.9],[x+b[0]*.9,y+4,z+b[1]*.9],.05);
+  const L=55, ca=Math.cos(ry), sa=Math.sin(ry); strut('steelR',[x-ca*14,H+1,z-sa*14],[x+ca*L,H+1,z+sa*L],.35); strut('steelR',[x,H+1,z],[x,H+7,z],.25); strut('steelR',[x,H+7,z],[x+ca*L*.6,H+1.2,z+sa*L*.6],.06); strut('steelR',[x,H+7,z],[x-ca*14,H+1.2,z-sa*14],.06);
+  boxAt('grey',x-ca*14-1.5,x-ca*14+1.5,H-1.5,H+.8,z-sa*14-1.5,z-sa*14+1.5); boxAt('steelY',x-1.4,x+1.4,H-2,H+.8,z-1.4,z+1.4); const hx=x+ca*L*.7, hz=z+sa*L*.7; strut('iron',[hx,H+1,hz],[hx,H-28,hz],.03); boxAt('iron',hx-.4,hx+.4,H-29,H-28,hz-.4,hz+.4); }
+
+/* ---------- 福音書記者・聖母マリア・イエスの塔 ---------- */
+const EV=[{x:16,z:16,sym:'angel',nm:'マタイ'},{x:-16,z:16,sym:'lion',nm:'マルコ'},{x:16,z:-16,sym:'ox',nm:'ルカ'},{x:-16,z:-16,sym:'eagle',nm:'ヨハネ'}];
+inEra('nk',()=>{
+  EV.forEach(e=>{ const f=t=>6*(1+.06*Math.sin(t*PI))*(1-.72*Math.pow(t,1.6));
+    bigTower(e.x,e.z,30,[[30,118,t=>f(t*88/98),'grey'],[118,128,t=>f((88+t*10)/98)*(1-.3*t),'trenc']],'grey',16);
+    for(let y=40;y<112;y+=9) for(let k=0;k<8;k++){ const a=k/8*TAU+(y%2)*.4, r=f((y-30)/98)*1.02; bk('ogA').add(PLANE,TM(e.x+Math.cos(a)*r,y,e.z+Math.sin(a)*r,-a+PI/2,.9,2.4,1)); }
+    ball('trenc',e.x,129.5,e.z,2.2); evSymbol(e.sym,e.x,131.5,e.z); });
+  // 聖母マリアの塔（12の光の星）
+  bigTower(0,-22,75,[[75,118,t=>6.6*(1-.35*Math.pow(t,1.5)),'grey'],[118,129,t=>4.3*(1-.5*t),'trenc']],'grey',20);
+  for(let y=82;y<114;y+=8) for(let k=0;k<10;k++){ const a=k/10*TAU, r=6.6*(1-.35*Math.pow((y-75)/43,1.5))*1.02; bk('ogA').add(PLANE,TM(Math.cos(a)*r,y,-22+Math.sin(a)*r,-a+PI/2,.9,2.4,1)); }
+  starTwelve(0,134,-22,3.8);
+  // イエス・キリストの塔（172.5m）
+  bigTower(0,0,60,[[60,138,t=>12*(1-.42*Math.pow(t,1.3)),'grey'],[138,150,t=>6.9*(1-.32*t),'trenc'],[150,155.5,t=>4.7*(1-.7*t),'white']],'grey',24);
+  for(let y=70;y<134;y+=8) for(let k=0;k<12;k++){ const a=k/12*TAU+(y%16?0:PI/12), r=12*(1-.42*Math.pow((y-60)/78,1.3))*1.02; bk('ogA').add(PLANE,TM(Math.cos(a)*r,y,Math.sin(a)*r,-a+PI/2,1,2.8,1)); }
+  // 4本の腕の十字架（高さ17m・幅13.5m、ガラスと鋼）
+  const cy=155.5; bk('crossG').add(BOXG,TM(0,cy+8.5,0,0,1.7,17,1.7)); for(const ry of [0,PI/2]) bk('crossG').add(BOXG,TM(0,cy+11,0,ry,13.5,1.6,1.6));
+  for(const ry of [0,PI/2]) for(const s of [-1,1]) bk('gold').add(BOXG,TM(Math.cos(ry)*s*6.8,cy+11,Math.sin(ry)*s*6.8,ry,.3,2,2));
+});
+function evSymbol(sym,x,y,z){ const G=sym==='lion'?'gold':'white';
+  if(sym==='angel'||sym==='eagle'){ for(const s of [-1,1]){ const sh=new THREE.Shape(); sh.moveTo(0,0); sh.quadraticCurveTo(2.5,1.5,4.2,4.8); sh.quadraticCurveTo(2.4,3.6,1.6,4.2); sh.quadraticCurveTo(1.2,2.4,0,1.2); sh.closePath(); const g=new THREE.ExtrudeGeometry(sh,{depth:.25,bevelEnabled:false}); bk(sym==='eagle'?'gold':'white').add(g,TM(x,y,z,0,s,1,1)); }
+    if(sym==='angel'){ bk('white').add(new THREE.ConeGeometry(.9,3,10),TM(x,y+1.5,z)); ball('gold',x,y+3.4,z,.55); }
+    else { ball('gold',x,y+1.6,z,.9,1.3); bk('gold').add(new THREE.ConeGeometry(.3,1,6),TM(x,y+2.4,z+.7,0,1,1,1,PI/2)); } }
+  else if(sym==='lion'){ ball('gold',x,y+1.6,z,1.3); for(let k=0;k<14;k++){ const a=k/14*TAU; bk('gold').add(new THREE.ConeGeometry(.35,1.4,6),TM(x+Math.cos(a)*1.3,y+1.6+Math.sin(a)*1.3,z,0,1,1,1,0,-a+PI/2)); } ball('red',x,y+1.6,z+1.1,.35); }
+  else if(sym==='ox'){ bk('white').add(new THREE.BoxGeometry(1.8,1.8,2.2),TM(x,y+1.5,z)); for(const s of [-1,1]) strut('gold',[x+s*.8,y+2.2,z],[x+s*2.1,y+3.6,z+.3],.32,.08,8); }
+}
+function starTwelve(x,y,z,r){ const ico=new THREE.IcosahedronGeometry(1,0); const p=ico.attributes.position, seen=new Set(); for(let i=0;i<p.count;i++){ const v=V3(p.getX(i),p.getY(i),p.getZ(i)).normalize(); const k=v.toArray().map(a=>a.toFixed(3)).join(); if(seen.has(k)) continue; seen.add(k);
+    const q=new THREE.Quaternion().setFromUnitVectors(_up,v); bk('glassStar').add(new THREE.ConeGeometry(r*.24,r,6),new THREE.Matrix4().compose(V3(x+v.x*r*.5,y+v.y*r*.5,z+v.z*r*.5),q,V3(1,1,1))); }
+  ball('glassStar',x,y,z,r*.42); window.STARP=V3(x,y,z); }
+
+/* ============================================================
+   内部の調度：主祭壇と天蓋・椅子・パイプオルガン・色の光
+   ============================================================ */
+inEra('nk',()=>{
+  slab(-5,5,-19.5,-13.5,.55); boxAt('granite',-5,5,0,.55,-19.5,-13.5); for(let k=0;k<3;k++) boxAt('granite',-5.6+k*.2,5.6-k*.2,0,.18*(k+1),-13.5+.35*(2-k)-.35,-13.5+.35*(2-k)+.05);
+  boxAt('porphyry',-1.8,1.8,.55,1.6,-17,-15.8); collide(-1.9,1.9,-17.1,-15.7,.5,1.7); // 祭壇
+  // 天蓋（七角形。ブドウと麦の穂、50の灯り）
+  const by=10.5, br=3.3; bk('white').add(new THREE.CylinderGeometry(br,br,1.3,7,1,true),TM(0,by,-16.4)); bk('gold').add(new THREE.TorusGeometry(br,.08,6,7),TM(0,by-.65,-16.4,0,1,1,1,PI/2)); bk('gold').add(new THREE.TorusGeometry(br,.08,6,7),TM(0,by+.65,-16.4,0,1,1,1,PI/2));
+  for(let k=0;k<50;k++){ const a=k/50*TAU, r=br*(k%2?.96:.75); bk('lamp').add(SPH_LO,TM(Math.cos(a)*r,by-.9-(k%3)*.25,-16.4+Math.sin(a)*r,0,.09,.09,.09)); }
+  for(let k=0;k<7;k++){ const a=k/7*TAU; const x=Math.cos(a)*br, z=-16.4+Math.sin(a)*br; for(let q=0;q<6;q++) ball('mosP',x+R(-.2,.2),by-1-q*.12,z+R(-.2,.2),.12); cone('gold',x*1.08,by-.9,z*1+(-16.4)*0+Math.sin(a)*.25,.15,.9,6); strut('iron',[x,by+.65,z],[x*.3,H_AISLE+12,-16.4+Math.sin(a)*1],.02); }
+  bk('crossG').add(BOXG,TM(0,7,-16.4,0,.18,3.4,.18)); bk('crossG').add(BOXG,TM(0,7.9,-16.4,0,1.8,.16,.16)); statue('gold',0,5.9,-16.25,1.9,0); strut('iron',[0,8.7,-16.4],[0,by-.6,-16.4],.015);
+  // 椅子
+  // 椅子（1列ずつまとめて描く）
+  const row=(x0,x1,z)=>{ boxAt('wood',x0,x1,.42,.47,z-.22,z+.22); boxAt('wood',x0,x1,.47,1.05,z+.19,z+.23); for(let x=x0+.27;x<x1;x+=.55){ boxAt('wood',x-.015,x+.015,0,.42,z-.2,z+.2); } };
+  for(let z=19;z<50.5;z+=1.05){ if(Math.abs(z-30)<.6||Math.abs(z-45)<.6) continue; for(const s of [-1,1]){ row(Math.min(s*1.3,s*6.6),Math.max(s*1.3,s*6.6),z); row(Math.min(s*8.8,s*13.9),Math.max(s*8.8,s*13.9),z); } }
+  for(let x=18;x<=28;x+=1.05) for(const s of [-1,1]) if(Math.abs(x-22.5)>1.4) for(const [z0,z1] of [[-5.5,-1.3],[1.3,5.5]]){ const xx=s*x; boxAt('wood',xx-.22,xx+.22,.42,.47,z0,z1); boxAt('wood',s>0?xx+.19:xx-.23,s>0?xx+.23:xx-.19,.47,1.05,z0,z1); }
+  for(const s of [-1,1]){ collide(s*1.3,s*6.6,18.6,50.8,0,1); collide(s*8.8,s*13.9,18.6,50.8,0,1); }
+  for(const s of [-1,1]) for(const [z0,z1] of [[-5.6,-1.2],[1.2,5.6]]) collide(s*17.7,s*21.2,z0,z1,0,1),collide(s*23.9,s*28.3,z0,z1,0,1);
+  // パイプオルガン（後陣の両側）
+  for(const s of [-1,1]) for(let k=0;k<18;k++){ const h=R(3,9), x=s*(12+k*.32), z=-27+Math.sin(k)*.4; cyl(k%3?'iron':'gold',x,10,z,.13,h,8); }
+  // 側廊上の聖歌隊席（ギャラリー）
+  for(const s of [-1,1]){ boxAt('sandL',s*17.5,s*22,14,14.6,16,51); for(let z=16.5;z<51;z+=1.5) boxAt('iron',s*17.5-.03,s*17.5+.03,14.6,15.6,z,z+.06); boxAt('iron',s*17.5-.04,s*17.5+.04,15.5,15.6,16,51); }
+});
+// 色の光の筋と床の光だまり
+const BEAMS={E:[],W:[],A:[]};
+const BEAMCOL={gE:'#4aa8ff',gW:'#ff8a30',gA:'#ffd880',gS:'#ffc070'};
+{ const groups={E:new THREE.Group(),W:new THREE.Group(),A:new THREE.Group()}; for(const k in groups){ eg('nk').add(groups[k]); }
+  const matB={}, matP={}; for(const k of ['E','W','A']){ const col=BEAMCOL[k==='E'?'gE':k==='W'?'gW':'gA']; matB[k]=new THREE.MeshBasicMaterial({map:TX.beam,color:col,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide,fog:false}); matP[k]=new THREE.MeshBasicMaterial({map:TX.pool,color:col,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}); }
+  const bg={E:[],W:[],A:[]}, pg={E:[],W:[],A:[]};
+  for(const w of WINLIST){ const side=w.pal==='gE'?'E':w.pal==='gW'?'W':(w.pal==='gA'?'A':null); if(!side) continue; if(w.y>50&&side!=='A') continue;
+    let nx,nz,tx,tz; if(w.arc){ const dx=w.arc[0]-w.x, dz=w.arc[1]-w.z, L=Math.hypot(dx,dz); nx=dx/L; nz=dz/L; } else if(w.axis==='z'){ nx=w.inward; nz=0; } else { nx=0; nz=w.inward; } tx=-nz; tz=nx;
+    const D=Math.min(26,w.y*1.25), fx=w.x+nx*D, fz=w.z+nz*D;
+    if(!inBasilica(fx,fz,-1)) continue;
+    const hw=w.w*.45, top=w.y+w.h*.15, bw=w.w*.75;
+    const pos=[w.x+tx*hw,top,w.z+tz*hw, w.x-tx*hw,top,w.z-tz*hw, fx-tx*bw,.05,fz-tz*bw, fx+tx*bw,.05,fz+tz*bw];
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setAttribute('uv',new THREE.Float32BufferAttribute([0,1,1,1,1,0,0,0],2)); g.setIndex([0,1,2,0,2,3]); g.computeVertexNormals(); bg[side].push([g,new THREE.Matrix4()]);
+    const pl=new THREE.PlaneGeometry(w.w*2.2,w.h*.9); pg[side].push([pl,TM(fx,.06,fz,Math.atan2(tx,tz),1,1,1,-PI/2)]); }
+  for(const k of ['E','W','A']){ if(bg[k].length){ const m=new THREE.Mesh(mergeGeo(bg[k]),matB[k]); m.renderOrder=3; groups[k].add(m); BEAMS[k].push(matB[k]); } if(pg[k].length){ const m=new THREE.Mesh(mergeGeo(pg[k]),matP[k]); groups[k].add(m); BEAMS[k].push(matP[k]); } } }
+function mergeGeo(items){ let n=0; const gs=items.map(([geo,m])=>{ let g=geo.index?geo.toNonIndexed():geo.clone(); g.applyMatrix4(m); if(!g.attributes.normal) g.computeVertexNormals(); n+=g.attributes.position.count; return g; });
+  const P=new Float32Array(n*3),N=new Float32Array(n*3),U=new Float32Array(n*2); let o=0; for(const g of gs){ const c=g.attributes.position.count; P.set(g.attributes.position.array,o*3); N.set(g.attributes.normal.array,o*3); if(g.attributes.uv) U.set(g.attributes.uv.array,o*2); o+=c; }
+  const G=new THREE.BufferGeometry(); G.setAttribute('position',new THREE.BufferAttribute(P,3)); G.setAttribute('normal',new THREE.BufferAttribute(N,3)); G.setAttribute('uv',new THREE.BufferAttribute(U,2)); G.computeBoundingSphere(); return G; }
+
+/* ============================================================
+   地下聖堂（クリプタ）とガウディの墓 — 1882年に着工、ガウディの時代から
+   ============================================================ */
+const CRY={x0:-13,x1:13,z0:-34,z1:-10,y:-6.5,h:-.7};
+const STAIR={x0:-29.5,x1:-26.5,z0:-30.5,z1:-19};
+TX.tomb=(()=>{ const W=512,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); noiseFill(g,W,H,'#d8d0c0','#b8ae9c',30,4); g.fillStyle='#3a2a1a'; g.textAlign='center'; g.font='bold 34px serif'; g.fillText('ANTONIUS GAUDI CORNET',W/2,62); g.font='26px serif'; g.fillText('REUSENSIS',W/2,104); g.font='20px serif'; g.fillText('· TEMPLI AUCTOR ·',W/2,146); g.fillText('OBIIT BARCINONE DIE X JUNII',W/2,180); g.font='bold 26px serif'; g.fillText('MCMXXVI',W/2,222); return toTex(c); })();
+M.tomb=std({map:TX.tomb,roughness:.6}); OWNUV.tomb=1;
+inEra('26nk',()=>{ const {x0,x1,z0,z1,y,h}=CRY;
+  slab(x0,x1,z0,z1,y); boxAt('floorIn',x0,x1,y-.3,y,z0,z1); boxAt('sandL',x0-.5,x1+.5,h,h+.4,z0-.5,z1+.5);
+  // 壁（西に入口の通路）
+  wallSeg('z',x0-.25,z0,z1,y,h,.5,'sandL',[[-34,-30.5,y,y+3.2]]); wallSeg('z',x1+.25,z0,z1,y,h,.5,'sandL',[]); wallSeg('x',z1+.25,x0,x1,y,h,.5,'sandL',[]); wallSeg('x',z0-.25,x0,x1,y,h,.5,'sandL',[[-10,10,y,h-.6]]);
+  // 北側の礼拝堂（半円の後陣、7つ）
+  arcWall(0,z0,10,PI,TAU,9,y,h,.5,'sandL'); collideRing(0,z0,10,.5,y-1,h+1,[[0,PI,-99,999]]); slab(-10,10,z0-10,z0,y); { const g=new THREE.CircleGeometry(10,24,0,PI); bk('floorIn').add(g,TM(0,y+.01,z0,0,1,1,1,-PI/2)); const g2=new THREE.CircleGeometry(10.3,24,PI,PI); bk('sandL').add(g2,TM(0,h,z0,0,1,1,1,PI/2)); }
+  // 柱とリブ・ヴォールト
+  for(const x of [-6.5,0,6.5]) for(const z of [-28,-22,-16]){ bk('grey').add(profGeo(()=>.42,y,h-1.1,2,12,{flutes:8,depth:.08}),TM(x,0,z)); bk('sandL').add(new THREE.CylinderGeometry(.75,.45,.6,8),TM(x,h-1.4,z)); collideCyl(x,z,.45,y-1,h); for(const [dx,dz] of [[3.25,3],[-3.25,3],[3.25,-3],[-3.25,-3]]) strut('sandL',[x,h-1.1,z],[x+dx,h-.05,z+dz],.12,.1,6); }
+  for(let k=0;k<9;k++){ const a=PI+PI*k/8; strut('sandL',[0,h-.1,z0],[Math.cos(a)*9.8,h-1.2,z0+Math.sin(a)*9.8],.12,.12,6); } ball('gold',0,h-.3,z0,.5);
+  for(let k=0;k<7;k++){ const a=PI+PI*(k+.5)/7; const x=Math.cos(a)*9.2, z=z0+Math.sin(a)*9.2; bk('gold').add(BOXG,TM(x,y+2.2,z,-a+PI/2,.9,1.6,.06)); bk('candle').add(CYL8,TM(x*.93,y+.6,z0+(z-z0)*.93,0,.05,1.2,.05)); }
+  // 祭壇と長椅子
+  boxAt('white',-1.4,1.4,y,y+1,z0-3.5,z0-2.3); collide(-1.5,1.5,z0-3.6,z0-2.2,y,y+1); bk('gold').add(BOXG,TM(0,y+2.2,z0-2.9,0,.1,1.6,.1)); bk('gold').add(BOXG,TM(0,y+2.6,z0-2.9,0,.8,.1,.1));
+  for(let z=-28;z<=-13;z+=1.4) for(const s of [-1,1]){ boxAt('wood',s*1.2,s*5.5,y+.42,y+.48,z-.25,z+.2); boxAt('wood',s*1.2,s*5.5,y+.48,y+.95,z+.18,z+.23); collide(s*1.2,s*5.5,z-.3,z+.25,y,y+1); }
+  // ガウディの墓（カルメンの聖母の礼拝堂）
+  { const a=PI*1.62, x=Math.cos(a)*8.4, z=z0+Math.sin(a)*8.4; bk('tomb').add(PLANE,TM(x,y+.04,z,-a+PI/2,2.6,1.3,1,-PI/2)); bk('gold').add(new THREE.TorusGeometry(.9,.04,6,20),TM(x,y+.06,z,0,1,1,1,PI/2)); window.TOMB={x,z,y}; for(let k=0;k<6;k++) bk('candle').add(CYL8,TM(x+Math.cos(k)*1.6,y+.3,z+Math.sin(k)*1.1,0,.04,.5,.04)); boxAt('iron',x-1.6,x+1.6,y,y+.9,z-.06+.9,z+.06+.9); }
+  // 通路と階段
+  slab(-29.5,-13,-34,-30.5,y); boxAt('floorIn',-29.5,-13,y-.3,y,-34,-30.5); boxAt('sandL',-30,-13,h,h+.4,-34.5,-30); wallSeg('x',-34.25,-29.5,-13,y,h,.5,'sandL',[]); wallSeg('x',-30.25,-26.5,-13,y,h,.5,'sandL',[]); collide(-30,-13,-34.6,-34,y,h); collide(-26.4,-13,-30.5,-30,y,h); solidBox('sandL',-30,-29.5,y,h,-34.5,-30.5);
+  RAMPS.push({x0:STAIR.x0,x1:STAIR.x1,z0:STAIR.z0,z1:STAIR.z1,ya:y,yb:0,ax:'z',g:BG}); HOLES.push(Object.assign({g:BG},STAIR));
+  { const n=34; for(let i=0;i<n;i++){ const z=STAIR.z0+(STAIR.z1-STAIR.z0)*i/n, yy=y+(0-y)*i/n; boxAt('oldB',STAIR.x0,STAIR.x1,yy-.3,yy+.0,z,z+(STAIR.z1-STAIR.z0)/n+.02); } }
+  for(const x of [STAIR.x0-.15,STAIR.x1+.15]){ const ze=x<STAIR.x0?STAIR.z1+3:STAIR.z1; boxAt('sandL',x-.15,x+.15,y,1.05,STAIR.z0,ze); collide(x-.15,x+.15,STAIR.z0,ze,-99,1.05); }
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,.05,.2,STAIR.z1,STAIR.z1+3); // 地上の入口（東から入る）
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,-2,1.05,STAIR.z0-.3,STAIR.z0); collide(STAIR.x0-.3,STAIR.x1+.3,STAIR.z0-.3,STAIR.z0,-1.5,1.05);
+  boxAt('sandL',STAIR.x0-.3,STAIR.x1+.3,h,0,-34.5,STAIR.z0); // 地上の床（通路の上）
+});
+
+/* ============================================================
+   サグラダ・ファミリア付属学校（1909年、波打つ屋根）
+   ============================================================ */
+M.brick=std({color:'#b86a44',roughness:.95,side:THREE.DoubleSide}); TILE.brick=2;
+inEra('26nk',()=>{ const cx=-43, cz=47, L=20, Wd=10, H=5;
+  const wave=(u,a)=>Math.sin(u*PI*3)*a;
+  for(const s of [-1,1]){ const pos=[],idx=[]; const n=40; for(let i=0;i<=n;i++){ const u=i/n, x=cx-L/2+u*L, z=cz+s*Wd/2+wave(u,.45); pos.push(x,0,z, x,H+wave(u+.17,.6)*s,z); } for(let i=0;i<n;i++){ const a=i*2; idx.push(a,a+2,a+1,a+1,a+2,a+3); } const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); bk('brick').add(g); }
+  for(const s of [-1,1]) boxAt('brick',cx+s*L/2-.15,cx+s*L/2+.15,0,H-.4,cz-Wd/2,cz+Wd/2);
+  { const pos=[],idx=[]; const n=40,m=10; for(let i=0;i<=n;i++) for(let j=0;j<=m;j++){ const u=i/n, v=j/m; const x=cx-L/2-.3+u*(L+.6), z=cz-Wd/2-.4+v*(Wd+.8); pos.push(x,H+.2+Math.sin(u*PI*3+PI/2*(v*2-1))*.6*(v*2-1),z); } for(let i=0;i<n;i++) for(let j=0;j<m;j++){ const a=i*(m+1)+j,b=a+m+1; idx.push(a,a+1,b,b,a+1,b+1); } const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); bk('brick').add(g); }
+  collide(cx-L/2,cx+L/2,cz-Wd/2-.5,cz+Wd/2+.5,0,H);
+  for(let k=0;k<5;k++){ const x=cx-L/2+2+k*4; pane('x',cz+Wd/2+wave((x-cx+L/2)/L,.45)+.02,x-.7,x+.7,1.2,3.2,'gS',-1); }
+});
+
+/* ============================================================
+   1926年：ガウディの工房と石材置き場
+   ============================================================ */
+inEra('26',()=>{
+  for(const [x,z,w,d,h] of [[-42,-40,16,9,7],[-24,-44,12,7,5],[-46,-22,8,12,5],[22,-44,14,8,5]]){ solidBox('plank',x-w/2,x+w/2,0,h,z-d/2,z+d/2); gable('roof',x-w/2-.4,x+w/2+.4,z-d/2-.4,z+d/2+.4,h,2.2,'x'); }
+  for(let k=0;k<70;k++){ const x=R(-20,20), z=R(8,50), w=R(.8,2), h=R(.5,1.4); if(Math.abs(x)<3) continue; boxAt(pick(['sand','sandL','grey']),x-w/2,x+w/2,0,h,z-w*.4,z+w*.4); }
+  for(const [x,z] of [[0,24],[-10,40],[12,36]]){ strut('wood',[x,0,z],[x,22,z],.25); strut('wood',[x,22,z],[x+12,16,z+3],.15); strut('wood',[x,22,z],[x-4,0,z+5],.12); strut('wood',[x,22,z],[x+3,0,z-5],.12); strut('iron',[x+11,16,z+3],[x+11,4,z+3],.02); }
+  // 板塀
+  for(const [x0,x1,z0,z1] of [[-56,-8,65.6,66.2],[8,56,65.6,66.2],[-56,-55.4,-46,-6],[-56,-55.4,6,66],[55.4,56,-46,-12],[55.4,56,12,66],[-56,-30,-46.2,-45.6],[-18,56,-46.2,-45.6]]) solidBox('plank',x0,x1,0,2.4,z0,z1);
+});
+
+/* ============================================================
+   アシャンプラ（碁盤目の街）・広場・遠景
+   ============================================================ */
+const PITCH=133.3, BLK=113.3, CHAMF=15, BC={x:0,z:10};
+function blockCenter(i,j){ return [BC.x+i*PITCH,BC.z+j*PITCH]; }
+function boxUV(w,h,d,su,sv){ const g=new THREE.BoxGeometry(w,h,d); const uv=g.attributes.uv; const dims=[[d,h],[d,h],[w,d],[w,d],[w,h],[w,h]]; for(let f=0;f<6;f++){ const [a,b]=dims[f]; for(let k=0;k<4;k++){ const i=f*4+k; uv.setXY(i,uv.getX(i)*(f===2||f===3?.01:a/su),uv.getY(i)*(f===2||f===3?.01:b/sv)); } } return g; }
+const CITY=[]; // 地図用
+{ const near=5, far=11;
+  for(let i=-far;i<=far;i++) for(let j=-far;j<=far;j++){ if(i===0&&j===0) continue; if((i===1||i===-1)&&j===0) continue; const [cx,cz]=blockCenter(i,j); const dist=Math.max(Math.abs(i),Math.abs(j)); const isNear=dist<=near;
+    // 1926年：周りはまだ空き地が多い
+    const h0=hash(i*3.1,j*7.7); const old=h0<.38&&dist<=near+2; const grp=old?'26nk':'nk';
+    CITY.push({cx,cz,old});
+    inEra(isNear?grp:grp+'F',()=>{ const s=BLK/2, dep=isNear?21:24;
+      // 八角形の街区の外周に建物を並べる
+      const sides=[[0,-1],[1,0],[0,1],[-1,0]];
+      sides.forEach(([dx,dz],k)=>{ const len=BLK-2*CHAMF; const segs=isNear?4:1; for(let q=0;q<segs;q++){ const u0=-len/2+len*q/segs, u1=-len/2+len*(q+1)/segs; const hh=isNear?Math.round(R(15,27)/3.5)*3.5:R(17,26); const tx=-dz, tz=dx; const mx=cx+dx*(s-dep/2)+tx*(u0+u1)/2, mz=cz+dz*(s-dep/2)+tz*(u0+u1)/2; const w=dx?dep:(u1-u0), d=dx?(u1-u0):dep;
+          const fi=Math.floor(hash(i+q,j+k)*4); const g=boxUV(w,hh,d,8.5,7); const b=bk('facs'+fi); b.add(g,TM(mx,hh/2,mz)); if(!isNear){ b.cast=false; }
+          if(isNear){ bk('facLit').add(g,TM(mx,hh/2,mz,0,1.002,1.001,1.002)); collide(mx-w/2,mx+w/2,mz-d/2,mz+d/2,0,hh); }
+          if(isNear) boxAt('roof',mx-w/2-.2,mx+w/2+.2,hh,hh+.6,mz-d/2-.2,mz+d/2+.2); } });
+      // 角の面取り（シャンフラン）
+      for(const [sx,sz] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ const hh=isNear?R(17,26):R(17,25); const px=cx+sx*(s-CHAMF/2-dep*.25), pz=cz+sz*(s-CHAMF/2-dep*.25); const ry=Math.atan2(sx,sz)+PI/4*0; const L=CHAMF*1.414+dep*.3; const g=boxUV(L,hh,dep,8.5,7); const fi=Math.floor(hash(i*2+sx,j*2+sz)*4); bk('facs'+fi).add(g,TM(px,hh/2,pz,Math.atan2(sx,sz))); if(isNear){ bk('facLit').add(g,TM(px,hh/2,pz,Math.atan2(sx,sz),1.002,1.001,1.002)); collideCyl(px,pz,dep*.55,0,hh); boxAt('roof',px-dep*.5,px+dep*.5,hh,hh+.5,pz-dep*.5,pz+dep*.5); } }
+      if(isNear){ // 歩道
+        const g=new THREE.CylinderGeometry((s+4)/.924,(s+4)/.924,.14,8,1); bk('panot').add(g,TM(cx,.07,cz,PI/8,1,1,1)); }
+    }); }
+  // 道路（全体）
+  inEra('26nk',()=>{ const S=PITCH*(far+.5); bk('asph').add(PLANE,TM(0,-.02,BC.z,0,S*2,S*2,1,-PI/2)); BK['26nk:asph'].cast=false; });
+}
+// 聖堂の街区の敷地（舗装）。地下聖堂の階段の穴はあける
+for(const [eraK,mat] of [['nk','panot'],['26','gravel']]) inEra(eraK,()=>{ const x0=-60,x1=60,z0=-50,z1=70; const H=STAIR;
+  const rects=[[x0,H.x0,z0,z1],[H.x1,x1,z0,z1],[H.x0,H.x1,z0,H.z0],[H.x0,H.x1,H.z1,z1]];
+  for(const [a,b,c,d] of rects) bk(mat).add(PLANE,TM((a+b)/2,.08,(c+d)/2,0,b-a,d-c,1,-PI/2)); });
+// ガウディ広場（東）：池と木々
+const POND={x:122,z:12,rx:30,rz:17};
+const [GX,GZ]=blockCenter(1,0), [SX,SZ]=blockCenter(-1,0);
+inEra('26nk',()=>{ bk('gravel').add(PLANE,TM(GX,.05,GZ,0,BLK+8,BLK+8,1,-PI/2)); bk('gravel').add(PLANE,TM(SX,.05,SZ,0,BLK+8,BLK+8,1,-PI/2)); });
+inEra('nk',()=>{
+  for(const [cx,cz] of [[GX+28,GZ-30],[GX+30,GZ+34],[GX-24,GZ+38],[SX-20,SZ-25],[SX+22,SZ+28],[SX-25,SZ+30],[SX+25,SZ-30]]){ const g=new THREE.CircleGeometry(R(14,20),20); bk('grass').add(g,TM(cx,.07,cz,0,1,R(.6,1),1,-PI/2)); }
+  // 池の縁
+  for(let k=0;k<64;k++){ const a=k/64*TAU, a2=(k+1)/64*TAU; const x1=POND.x+Math.cos(a)*(POND.rx+.3), z1=POND.z+Math.sin(a)*(POND.rz+.3), x2=POND.x+Math.cos(a2)*(POND.rx+.3), z2=POND.z+Math.sin(a2)*(POND.rz+.3); const L=Math.hypot(x2-x1,z2-z1)+.05; bk('curb').add(BOXG,TM((x1+x2)/2,.22,(z1+z2)/2,Math.atan2(x2-x1,z2-z1)+PI/2,L,.44,.6)); if(k%2===0) collideCyl(x1,z1,1,0,.5); }
+  // 遊び場とベンチ（サグラダ・ファミリア広場）
+  for(let k=0;k<14;k++){ const a=k/14*TAU, x=SX+Math.cos(a)*26, z=SZ+Math.sin(a)*24; boxAt('wood',x-.9,x+.9,.42,.5,z-.25,z+.25); }
+  for(let k=0;k<12;k++){ const a=k/12*TAU, x=POND.x+Math.cos(a)*(POND.rx+5), z=POND.z+Math.sin(a)*(POND.rz+5); boxAt('wood',x-.9,x+.9,.42,.5,z-.25,z+.25); }
+  for(const [x,z] of [[SX,SZ+8]]){ for(const s of [-1,1]) strut('steelR',[x+s*2,0,z],[x+s*2,3,z],.08); strut('steelR',[x-2,3,z],[x+2,3,z],.08); }
+  // 街灯
+  for(let k=0;k<20;k++){ const t=k/20, side=k%2; const x=side?62:-62, z=-50+t*240; if(z>70) continue; strut('iron',[x,0,z],[x,7,z],.08); ball('lamp',x,7.1,z,.25); }
+});
+// 水面（池）— キューブカメラで周囲を一度だけ映し込む
+const cubeRT=new THREE.WebGLCubeRenderTarget(256,{generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter}); cubeRT.texture.encoding=THREE.sRGBEncoding;
+const cubeCam=new THREE.CubeCamera(1,3000,cubeRT); cubeCam.position.set(POND.x,1.2,POND.z); scene.add(cubeCam);
+M.water=std({color:'#6a9aa8',metalness:.9,roughness:.04,envMap:cubeRT.texture,envMapIntensity:1.1});
+const WATER=new THREE.Mesh(new THREE.CircleGeometry(1,48),M.water); WATER.rotation.x=-PI/2; WATER.scale.set(POND.rx,POND.rz,1); WATER.position.set(POND.x,.06,POND.z); eg('nk').add(WATER);
+
+/* ---------- 街路樹（プラタナス）— インスタンスで軽く ---------- */
+const TREEPOS=[];
+function segDist(px,pz,ax,az,bx,bz){ const dx=bx-ax,dz=bz-az,t=Math.max(0,Math.min(1,((px-ax)*dx+(pz-az)*dz)/(dx*dx+dz*dz))); return Math.hypot(px-ax-dx*t,pz-az-dz*t); }
+{ for(let i=-2;i<=2;i++) for(let j=-2;j<=2;j++){ const [cx,cz]=blockCenter(i,j); const s=BLK/2+2.2; const park=(j===0&&(i===1||i===-1)); if(i===0&&j===0) continue;
+    if(park){ for(let k=0;k<110;k++){ const x=cx+R(-50,50), z=cz+R(-50,50); if(i===1&&((x-POND.x)/(POND.rx+4))**2+((z-POND.z)/(POND.rz+4))**2<1) continue; if(i===1&&(segDist(x,z,152,22,40,0)<11||segDist(x,z,108,30,40,0)<9)) continue; TREEPOS.push([x,z,R(.8,1.3),'nk']); } continue; }
+    for(const [dx,dz] of [[0,-1],[1,0],[0,1],[-1,0]]){ const len=BLK-2*CHAMF; for(let u=-len/2+4;u<len/2-2;u+=12){ const tx=-dz,tz=dx; TREEPOS.push([cx+dx*s+tx*u,cz+dz*s+tz*u,R(.8,1.15),hash(i+u,j)<.5?'26nk':'nk']); } } }
+  for(let k=0;k<26;k++){ const a=k/26*TAU; const x=Math.cos(a)*64, z=10+Math.sin(a)*66; if(Math.abs(z-68)<12&&Math.abs(x)<30) continue; TREEPOS.push([Math.max(-64,Math.min(64,x*1.1)),Math.max(-56,Math.min(76,z*1.05)),R(.7,1),'nk']); } }
+const TREES={};
+{ const trunk=new THREE.CylinderGeometry(.22,.32,4,6); trunk.translate(0,2,0);
+  const cpy=mergeGeo([[new THREE.IcosahedronGeometry(2.6,1),TM(0,6,0,0,1,.8,1)],[new THREE.IcosahedronGeometry(2.1,0),TM(1.4,5.2,.5)],[new THREE.IcosahedronGeometry(2,0),TM(-1.2,5.4,-.7)]]);
+  for(const grp of ['26nk','nk']){ const list=TREEPOS.filter(t=>t[3]===grp); const it=new THREE.InstancedMesh(trunk,M.bark,list.length), ic=new THREE.InstancedMesh(cpy,M.leaf,list.length); const mm=new THREE.Matrix4();
+    list.forEach((t,k)=>{ mm.compose(V3(t[0],0,t[1]),new THREE.Quaternion().setFromAxisAngle(_up,rnd()*TAU),V3(t[2],t[2],t[2])); it.setMatrixAt(k,mm); ic.setMatrixAt(k,mm); });
+    it.castShadow=ic.castShadow=true; it.receiveShadow=ic.receiveShadow=true; eg(grp).add(it); eg(grp).add(ic); TREES[grp]=ic; }
+  for(const t of TREEPOS){ inEra(t[3],()=>collideCyl(t[0],t[1],.35,0,3)); } }
+
+/* ---------- 遠景：海・モンジュイックの丘・コイセロラの山並み・グロリエスの塔 ---------- */
+inEra('26nk',()=>{
+  M.sea=std({color:'#2a5a78',roughness:.25,metalness:.4}); const sea=new THREE.Mesh(new THREE.PlaneGeometry(9000,3000),M.sea); sea.rotation.x=-PI/2; sea.position.set(1500,-.3,3400); scene.add(sea);
+  M.hill=std({color:'#5a6a50',roughness:1}); M.hillF=std({color:'#4a5a5a',roughness:1});
+  const ridge=(cx,cz,len,w,hmax,ry,mat,n)=>{ const pos=[],idx=[]; for(let i=0;i<=n;i++){ const u=i/n-.5; const hh=hmax*(.55+.45*Math.sin(u*PI*3.1+1)+.25*Math.sin(u*PI*9))*Math.cos(u*PI*.95); for(const v of [-1,1]){ pos.push(u*len,v<0?hh:0,v*w); } pos.push(u*len,0,-w); } for(let i=0;i<n;i++){ const a=i*3,b=a+3; idx.push(a,b,a+1,b,b+1,a+1, a,a+2,b,b,a+2,b+2); } const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals(); const m=new THREE.Mesh(g,mat); m.position.set(cx,0,cz); m.rotation.y=ry; scene.add(m); };
+  ridge(-1200,-4300,9000,1400,420,.55,M.hillF,60);
+  const mj=new THREE.Mesh(new THREE.SphereGeometry(1,24,12,0,TAU,0,PI/2),M.hill); mj.scale.set(900,175,650); mj.position.set(-2300,0,2100); scene.add(mj);
+  // ティビダボの丘の上の教会（遠くのシルエット）
+  const tb=new THREE.Group(); const tbm=std({color:'#8a8a84',roughness:1}); tb.add(new THREE.Mesh(new THREE.BoxGeometry(40,30,30),tbm)); const sp=new THREE.Mesh(new THREE.ConeGeometry(8,45,8),tbm); sp.position.y=36; tb.add(sp); tb.position.set(-2600,560,-4420); scene.add(tb);
+  const tc=new THREE.Mesh(new THREE.CylinderGeometry(3,5,260,6),tbm); tc.position.set(-3400,560,-4300); scene.add(tc);
+});
+inEra('nk',()=>{ // グロリエスの塔（弾丸形の高層ビル）
+  M.glories=std({color:'#6a7a8a',roughness:.3,metalness:.6,emissive:'#3060ff',emissiveIntensity:0}); const g=lathe([[19,0],[19,60],[18,100],[15,125],[10,138],[3,144],[0,145]],24); const m=new THREE.Mesh(g,M.glories); m.position.set(1450,0,420); m.castShadow=false; eg('nk').add(m);
+  M.agbarLit=new THREE.MeshBasicMaterial({map:(()=>{ const W=64,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); const gr=g.createLinearGradient(0,H,0,0); gr.addColorStop(0,'#ff3020'); gr.addColorStop(.5,'#ff40c0'); gr.addColorStop(1,'#4060ff'); g.fillStyle=gr; g.fillRect(0,0,W,H); return toTex(c); })(),transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
+  const m2=new THREE.Mesh(g,M.agbarLit); m2.position.copy(m.position); m2.scale.set(1.01,1,1.01); eg('nk').add(m2);
+});
+
+/* ============================================================
+   人と車（インスタンスで動かす）
+   ============================================================ */
+const PEOPLE=[]; let PEOPLE_ON=true;
+const PZONES={ // 歩く範囲
+  out:[{x0:40,x1:60,z0:-40,z1:60},{x0:-60,x1:-48,z0:-40,z1:60},{x0:-50,x1:50,z0:68,z1:76},{x0:72,x1:185,z0:-45,z1:65},{x0:-185,x1:-72,z0:-45,z1:65},{x0:-40,x1:40,z0:-56,z1:-46}],
+  in:[{x0:-1,x1:1,z0:16,z1:51},{x0:-16,x1:16,z0:-6,z1:6},{x0:-28,x1:28,z0:7,z1:14},{x0:-14,x1:14,z0:-12,z1:12},{x0:15.8,x1:21.5,z0:16,z1:50},{x0:-21.5,x1:-15.8,z0:16,z1:50},{x0:-8,x1:8,z0:-26,z1:-20}],
+};
+const LINES={
+  n:['（スペイン語で）¡Qué maravilla!——なんて素晴らしい！','上を見て！本当に森の中みたい。','イエスの塔、ついに完成したんだって。172.5mだよ。','東の窓は青と緑、西の窓は赤と橙。午後の光がいちばんきれいなんだ。','（英語で）I never thought it would be finished in my lifetime.','生誕のファサードの扉、よく見ると虫がいっぱい。','ガウディは「私の依頼主は急いでいない」と言ったと伝えられているね。','次は塔に上ってみよう。エレベーターは生誕の塔だよ。'],
+  k:['正面の栄光のファサードがついにできた！','この大きな玄関の7本の柱は、聖霊の7つの賜物を表すんだって。','18本の塔がそろうと、街のどこからでも見えるね。'],
+  '26':['（石工）ガウディ先生が亡くなった……路面電車にはねられたそうだ。','（石工）聖バルナバの塔は去年仕上がった。残りの3本も急がねば。','（見物人）こんな大きな教会、本当に完成するのかね。','（石工）石膏の模型どおりに、ひとつずつ石を刻むんだ。'],
+};
+{ const body=mergeGeo([[new THREE.CylinderGeometry(.17,.22,1.0,8),TM(0,.95,0)],[new THREE.CylinderGeometry(.08,.08,.5,6),TM(.09,.25,0)],[new THREE.CylinderGeometry(.08,.08,.5,6),TM(-.09,.25,0)],[new THREE.SphereGeometry(.13,8,6),TM(0,1.6,0)]]);
+  const mat=std({roughness:.8}); const N=150; const im=new THREE.InstancedMesh(body,mat,N); im.castShadow=true; im.frustumCulled=false; scene.add(im);
+  const cols=['#c84a3a','#3a6ac8','#e8e0d0','#2a2a2e','#e8c040','#4a8a5a','#8a4ac0','#d88aa0','#5a5a60','#f0f0f0','#2a4a7a'];
+  for(let i=0;i<N;i++){ const inside=i<45; const zs=inside?PZONES.in:PZONES.out; const zz=zs[i%zs.length]; const p={i,inside,zone:zz,x:R(zz.x0,zz.x1),z:R(zz.z0,zz.z1),tx:0,tz:0,sp:R(.6,1.2),wait:R(0,4),h:R(.92,1.08),look:inside&&rnd()<.45,ph:rnd()*9};
+    p.tx=p.x; p.tz=p.z; im.setColorAt(i,new THREE.Color(pick(cols))); PEOPLE.push(p); }
+  im.instanceColor.needsUpdate=true; window.PIM=im; }
+const CARS=[];
+{ const g=mergeGeo([[new THREE.BoxGeometry(1.8,.9,4.2),TM(0,.65,0)],[new THREE.BoxGeometry(1.6,.7,2.2),TM(0,1.4,-.2)]]); const N=36; const im=new THREE.InstancedMesh(g,std({roughness:.4,metalness:.5}),N); im.castShadow=true; im.frustumCulled=false; eg('nk').add(im);
+  const yel=new THREE.Color('#f0c020'), blk=new THREE.Color('#1a1a1a'), cc=['#e8e8e8','#2a2a2e','#c03030','#3a5a9a','#9a9aa0'];
+  for(let i=0;i<N;i++){ const alongX=i%2===0; const lane=Math.floor(rnd()*4)-2; const line=(lane+.5)*PITCH+(alongX?BC.z:0)-PITCH/2*0; const off=(rnd()<.5?-1:1)*R(2.5,6.5);
+    CARS.push({alongX,c:(alongX?BC.z:BC.x)+(Math.floor(rnd()*5)-2)*PITCH+PITCH/2+off*.0+(alongX?-PITCH/2+PITCH/2:0)+off,s:R(-700,700),v:R(7,12)*(rnd()<.5?1:-1)});
+    im.setColorAt(i,rnd()<.3?yel:new THREE.Color(pick(cc))); }
+  im.instanceColor.needsUpdate=true; window.CIM=im; }
+
+/* ============================================================
+   案内係（タップで話す）
+   ============================================================ */
+const TAPS=[];
+function tapable(obj,who,lines){ obj.userData.tap={who,lines}; TAPS.push(obj); }
+function npc(x,z,ry,col,hat){ const g=new THREE.Group(); const m=std({color:col,roughness:.8}); const b=new THREE.Mesh(new THREE.CylinderGeometry(.18,.24,1.05,10),m); b.position.y=.98; g.add(b); for(const s of [-1,1]){ const l=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.5,6),std({color:'#2a2a30'})); l.position.set(s*.09,.25,0); g.add(l); } const h=new THREE.Mesh(new THREE.SphereGeometry(.13,12,10),std({color:'#e8c8a8',roughness:.7})); h.position.y=1.62; g.add(h); if(hat){ const c=new THREE.Mesh(new THREE.CylinderGeometry(.17,.17,.08,12),std({color:hat})); c.position.y=1.72; g.add(c); } g.position.set(x,0,z); g.rotation.y=ry; g.traverse(o=>{ if(o.isMesh) o.castShadow=true; }); return g; }
+{ const gd=npc(44,-5,PI/2,'#2a4a7a'); eg('nk').add(gd); tapable(gd,'案内係',['ようこそ、サグラダ・ファミリアへ。正式には「聖家族贖罪教会」といいます。','この生誕のファサードは、ガウディが生きているうちにほぼ形になった唯一のファサードです。','3つの門は、左から希望・慈愛・信仰。中央の門の上の緑の木は、生命の樹の糸杉です。','塔に上るなら、中に入って右（北）の奥のエレベーターへ。帰りは螺旋階段で下りられます。','門を分ける柱の足元を見てください。海側は海亀、山側は陸亀が柱を支えています。','中央の扉は日本人彫刻家・外尾悦郎さんの作品。植物と虫がたくさん隠れています。']);
+  const g2=npc(-3,-11,PI,'#6a2a2a'); eg('nk').add(g2); tapable(g2,'教会の係員',['頭上の天蓋には50の灯りと、ブドウと麦の穂の飾りがあります。','この柱は赤い斑岩。交差部の4本は、4人の福音書記者を表しています。','真上は高さ60m。その上にイエス・キリストの塔が立っています。']);
+  const g3=npc(-24.2,-17.6,-PI/2,'#4a4a52'); eg('26nk').add(g3); tapable(g3,'墓守',['この階段の下が地下聖堂です。1882年、ここから工事が始まりました。','ガウディは1926年6月10日に亡くなり、この地下のカルメンの聖母の礼拝堂に眠っています。']);
+  const g4=npc(-38,-34,PI*.7,'#8a7a5a','#3a3028'); eg('26').add(g4); tapable(g4,'石工',['ガウディ先生は、ここの工房で模型を作り続けておられた。','「私の依頼主は急いでいない」——先生はそう言っていたそうだ。','この教会が完成するのは、何十年、いや何百年先かもしれんな。']);
+  const g5=npc(36.5,-1.5,-PI/2,'#2a4a7a'); g5.position.y=65; eg('nk').add(g5); tapable(g5,'塔の係員',['ここは高さ65m。正面に見えるのが東の地中海、右手の丘がモンジュイックです。','碁盤目の街はアシャンプラ。角を切り落とした八角形の街区が、19世紀の計画どおりに並んでいます。','帰りは、南側の塔の螺旋階段から下りられます。中心が吹き抜けなので、のぞいてみてください。']);
+}
+
+/* ============================================================
+   まとめて描画用のメッシュを作る
+   ============================================================ */
+for(const k in BK) BK[k].build();
+for(const k in EG) EG[k].visible=eraOn(EG[k].userData.era);
+
+/* ============================================================
+   光・空・霧
+   ============================================================ */
+const hemi=new THREE.HemisphereLight('#bcd4f0','#8a7058',.6); scene.add(hemi);
+const sun=new THREE.DirectionalLight('#fff4e0',2.6); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); const SC=sun.shadow.camera; SC.left=-150; SC.right=150; SC.top=150; SC.bottom=-150; SC.near=10; SC.far=900; sun.shadow.bias=-.0006; sun.shadow.normalBias=.04; scene.add(sun); scene.add(sun.target);
+const amb=new THREE.AmbientLight('#ffffff',.08); scene.add(amb);
+const IL={E:new THREE.PointLight('#5ab0ff',0,40,1.6),W:new THREE.PointLight('#ff9040',0,40,1.6),A:new THREE.PointLight('#ffe0a0',0,36,1.6),C:new THREE.PointLight('#ffb870',0,22,1.6)};
+IL.E.position.set(16,14,12); IL.W.position.set(-16,14,12); IL.A.position.set(0,12,-16); IL.C.position.set(0,-3,-22); for(const k in IL) scene.add(IL[k]);
+scene.fog=new THREE.Fog('#c8d8e6',300,4200);
+const SKYC=makeCanvas(4,256), SKYT=toTex(SKYC,true,false);
+const sky=new THREE.Mesh(new THREE.SphereGeometry(6000,24,12),new THREE.MeshBasicMaterial({map:SKYT,side:THREE.BackSide,fog:false,depthWrite:false})); sky.renderOrder=-1; scene.add(sky);
+const sunS=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.glow,color:'#fff4d8',fog:false,depthWrite:false,blending:THREE.AdditiveBlending})); sunS.scale.set(600,600,1); scene.add(sunS);
+const CLOUDS=[]; for(let i=0;i<14;i++){ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:TX.cloud,fog:false,depthWrite:false,transparent:true,opacity:.7})); const a=rnd()*TAU, r=R(1800,4200); s.position.set(Math.cos(a)*r,R(500,1100),Math.sin(a)*r); s.scale.set(R(900,1800),R(300,500),1); scene.add(s); CLOUDS.push(s); }
+const TIMES={
+  asa:{nm:'朝',top:'#4a78c0',mid:'#9cc0e8',hor:'#f6c8a0',sun:[.85,.28,.25],sc:'#ffd2a2',si:2.5,hs:'#c0d4f0',hg:'#8a7058',hi:.55,fog:'#dcc8b8',bE:1,bW:.12,bA:.45,ex:1.0,night:0},
+  hiru:{nm:'昼',top:'#2a64c0',mid:'#7aaee0',hor:'#d2e4f2',sun:[.3,1,.55],sc:'#fff6e8',si:2.8,hs:'#c4daf4',hg:'#8a7458',hi:.7,fog:'#c8d8e6',bE:.32,bW:.32,bA:.7,ex:1.0,night:0},
+  yu:{nm:'夕',top:'#344a7a',mid:'#c88a8a',hor:'#ffa258',sun:[-.88,.2,.18],sc:'#ff9a52',si:2.3,hs:'#e0a888',hg:'#6a4a3a',hi:.5,fog:'#e0aa8a',bE:.08,bW:1.1,bA:.4,ex:1.05,night:0},
+  yoru:{nm:'夜',top:'#03060f',mid:'#0c1428',hor:'#1e2a44',sun:[-.3,.8,-.5],sc:'#a8b8e0',si:.32,hs:'#33456a',hg:'#1a1410',hi:.28,fog:'#0e1424',bE:0,bW:0,bA:0,ex:1.15,night:1},
+};
+let TIME='hiru';
+function applyTime(){ const T=TIMES[TIME]; const g=SKYC.getContext('2d'); const gr=g.createLinearGradient(0,0,0,256); gr.addColorStop(0,T.top); gr.addColorStop(.38,T.mid); gr.addColorStop(.5,T.hor); gr.addColorStop(1,T.hor); g.fillStyle=gr; g.fillRect(0,0,4,256); SKYT.needsUpdate=true;
+  sun.color.set(T.sc); hemi.color.set(T.hs); hemi.groundColor.set(T.hg); scene.fog.color.set(T.fog); renderer.setClearColor(T.fog); renderer.toneMappingExposure=T.ex;
+  const d=V3(...T.sun).normalize(); window.SUND=d; sunS.position.copy(d.clone().multiplyScalar(5200)); sunS.material.color.set(T.night?'#c8d4ff':T.sc); sunS.scale.setScalar(T.night?260:600);
+  CLOUDS.forEach(c=>{ c.material.color.set(T.night?'#2a3450':TIME==='yu'?'#ffc8a0':'#ffffff'); c.material.opacity=T.night?.35:.7; });
+  // 夜のライトアップ
+  STONEMATS.forEach(m=>m.emissiveIntensity=T.night?.3:0); for(const k of ['ogE','ogW','ogA','ogS']) M[k].emissiveIntensity=T.night?.75:0;
+  M.facLit.opacity=T.night?1:0; if(M.agbarLit) M.agbarLit.opacity=T.night?.9:0; M.glassStar.emissiveIntensity=T.night?2.2:.4; M.crossG.emissiveIntensity=T.night?1.6:.15; M.vault.emissiveIntensity=T.night?.12:.3;
+  M.lamp.color.set(T.night?'#fff4d0':'#fff0c8');
+  $('vTime').textContent=T.nm; [...$('timeSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.v===TIME)); needRefl=2; }
+let needRefl=2;
+function updateRefl(){ WATER.visible=false; const pv=PIM.visible; PIM.visible=false; cubeCam.update(renderer,scene); WATER.visible=true; PIM.visible=pv; }
+
+/* ============================================================
+   状態
+   ============================================================ */
+let SOUND=true;
+const START_POS={x:104,z:28,yaw:PI/2-.25};
+const P={x:START_POS.x,y:0,z:START_POS.z,yaw:START_POS.yaw,pitch:.18,vy:0};
+let warpGuard=null, LIFTA=null;
+
+/* ---------- 見どころ（札） ---------- */
+const SPOTS=[
+  {id:'ike',era:'nk',name:'ガウディ広場の池',kana:'がうでぃひろばのいけ',x:108,z:12,r:12,lvl:'out',text:'生誕のファサードの東にある広場。池の水面に塔が映り込む、サグラダ・ファミリアでいちばん有名な眺めの場所です。朝は正面から日が当たり、彫刻の陰影がくっきり見えます。',meta:[['見どころ','水面に映る塔・生誕のファサードの全景'],['ひとこと','写真モードで池ごしに撮ってみよう']]},
+  {id:'nacimiento',era:'26nk',name:'生誕のファサード',kana:'せいたんのふぁさーど',x:45,z:0,r:10,lvl:'out',text:'ガウディが自ら手がけ、生前にほぼ形になった唯一のファサード。キリストの誕生を、植物や動物とともに祝う「喜び」の面です。3つの門は左から希望（ヨセフ）・慈愛（イエス）・信仰（マリア）。中央の慈愛の門の上には生命の樹の糸杉と白い鳩。門を分ける柱は、海側が海亀、山側が陸亀の上に立っています。',meta:[['見どころ','糸杉と鳩・亀の柱・ベツレヘムの星・ラッパを吹く天使'],['鐘塔','バルナバ・シモン・ユダ・マティア（約100m）'],['世界遺産','2005年（地下聖堂とともに）'],['1926年','完成していた鐘塔は聖バルナバの1本だけ']]},
+  {id:'sotoo',era:'nk',name:'慈愛の門の扉',kana:'じあいのもんのとびら',x:32.2,z:0,r:3.6,lvl:'out',text:'生誕のファサードの扉は、日本人彫刻家・外尾悦郎さんの作品。ブロンズとガラスに、ツタや葉、虫や小さな生き物がびっしりと刻まれ、2015年に完成しました。外尾さんは1978年からこの教会の彫刻に携わり、身廊の上の色とりどりの果物の小尖塔も手がけています。',meta:[['見どころ','葉と虫のブロンズ'],['ひとこと','扉の内側にも植物が続いている']]},
+  {id:'pasion',era:'nk',name:'受難のファサード',kana:'じゅなんのふぁさーど',x:-50,z:0,r:10,lvl:'out',text:'西側の、キリストの受難と死を表すファサード。ガウディは「見る人が恐れを抱くほど厳しく」と考えていました。骨のように傾いた6本の柱が大きなひさしを支え、上には18本の骨の柱が並びます。角ばった彫刻はジュゼップ・マリア・スビラックスが1980年代後半から手がけたもの。中央には福音書の言葉を刻んだブロンズの扉。',meta:[['見どころ','傾いた柱・最後の晩餐・十字架のキリスト・文字の扉'],['鐘塔','約110m（4本）'],['ひとこと','夕方、西日が正面から当たる']]},
+  {id:'gloria',era:'nk',name:'栄光のファサード',kana:'えいこうのふぁさーど',x:0,z:74,r:10,lvl:'out',text:'正面にあたる、いちばん大きなファサード。中央のブロンズの扉には、カタルーニャ語の「主の祈り」と、50の言語の「日ごとの糧を今日もお与えください」の一文が刻まれています。完成すると7本の柱の大きな玄関と4本の鐘塔が立ち、ここが教会の正面入口になります。',meta:[['現在','工事中（足場とクレーン）'],['完成予想','メニューの「とき」で見られます（想像を含む）']]},
+  {id:'abside',era:'26nk',name:'後陣と聖母マリアの塔',kana:'こうじんとせいぼまりあのとう',x:0,z:-52,r:10,lvl:'out',text:'聖堂の北の端の半円形の後陣。ガウディが最初の頃に建てたネオ・ゴシックの外壁で、尖塔の先には麦の穂などの飾りが付きます。その上に立つのが、2021年に完成した聖母マリアの塔（138m）。頂の星は夜になると光ります。',meta:[['見どころ','後陣の小尖塔・聖母マリアの塔の星'],['1926年','後陣の外壁はできていたが、塔はまだない']]},
+  {id:'escoles',era:'26nk',name:'サグラダ・ファミリア付属学校',kana:'ふぞくがっこう',x:-43,z:56,r:8,lvl:'out',text:'1909年、工事で働く人の子どもたちのためにガウディが建てた小さな学校。薄いレンガを波のように曲げた壁と屋根は、安く速く建てられて丈夫です。のちに建築家ル・コルビュジエも見学し、その構造をスケッチに残しました。',meta:[['見どころ','波打つ屋根と壁']]},
+  {id:'plaza',era:'nk',name:'サグラダ・ファミリア広場',kana:'さぐらだ・ふぁみりあひろば',x:-112,z:16,r:12,lvl:'out',text:'受難のファサードの西にある広場。木陰から、受難のファサードと中央のイエス・キリストの塔（172.5m）を見上げられます。夕方は西日が正面から差します。',meta:[['見どころ','受難のファサードと18本の塔の重なり']]},
+  {id:'taller',era:'26',name:'ガウディの工房',kana:'がうでぃのこうぼう',x:-40,z:-33,r:8,lvl:'out',text:'1926年、敷地の一角にあったガウディの工房。石膏の模型や図面がここに置かれ、晩年のガウディはここに寝泊まりして仕事を続けました。1936年、スペイン内戦で焼かれ、多くの資料が失われました。',meta:[['とき','1926年だけ'],['ひとこと','石材置き場と木の起重機も見てみよう']]},
+  {id:'nave',era:'nk',name:'身廊——柱の森',kana:'しんろう',x:0,z:36,r:8,lvl:'in',text:'ガウディは聖堂の内部を森に見立てました。柱は上に行くほど枝分かれし、天井の双曲面のくぼみから、光が葉漏れ日のように落ちてきます。柱は下が星形の多角形で、上へ行くほど二重のねじれで丸くなっていきます。2010年に完成し、教皇ベネディクト16世が献堂しました。',meta:[['天井の高さ','中央45m・側廊30m'],['柱の石','花崗岩・砂岩・玄武岩・斑岩（重さを受ける柱ほど硬い石）'],['操作','「見上げ」ボタンで天井を見よう']]},
+  {id:'crucero',era:'nk',name:'交差部',kana:'こうさぶ',x:0,z:2,r:7,lvl:'in',text:'身廊と翼廊が交わる中心。天井の高さは60mで、その真上にイエス・キリストの塔が立ちます。まわりを囲む4本の太い赤い柱は斑岩で、4人の福音書記者を表し、それぞれの上に福音書記者の塔がそびえています。',meta:[['天井の高さ','60m'],['真上','イエス・キリストの塔（172.5m）']]},
+  {id:'altar',era:'nk',name:'主祭壇と天蓋',kana:'しゅさいだんとてんがい',x:0,z:-11,r:6,lvl:'in',text:'後陣の前の主祭壇。上に吊られた七角形の天蓋には、ブドウと麦の穂の飾りと50の灯りがあり、その下に十字架のキリストが浮かびます。後陣の天井は75mで、その真上が聖母マリアの塔です。',meta:[['後陣の天井','75m'],['見どころ','天蓋・後陣の黄金色の窓']]},
+  {id:'este',era:'nk',name:'東の窓（青と緑）',kana:'ひがしのまど',x:18,z:30,r:6,lvl:'in',text:'生誕の側（東）のステンドグラスは、朝日を受ける青と緑の冷たい色。ジュアン・ビラ＝グラウのデザインで、上へ行くほど透明に近づき、たくさんの光を取り込みます。時刻を「朝」にすると、色の光の筋が床まで届きます。',meta:[['おすすめの時刻','朝']]},
+  {id:'oeste',era:'nk',name:'西の窓（赤と橙）',kana:'にしのまど',x:-18,z:30,r:6,lvl:'in',text:'受難の側（西）は、夕日を受ける赤・橙・黄の暖かい色。午後になると、色の光が柱と床を染めていきます。時刻を「夕」にしてみましょう。',meta:[['おすすめの時刻','夕']]},
+  {id:'cripta',era:'26nk',name:'地下聖堂とガウディの墓',kana:'ちかせいどう',x:0,z:-30,r:8,lvl:'B1',text:'1882年、最初に工事が始まった場所。前任のビリャールの設計を引き継いで、ガウディが完成させました。1926年6月10日に亡くなったガウディは、ここカルメンの聖母の礼拝堂に葬られています。墓石のラテン語には「この教会の作り手」と刻まれています。',meta:[['入口','後陣の西の外の階段'],['世界遺産','2005年']]},
+  {id:'puente',era:'nk',name:'生誕の塔の橋',kana:'せいたんのとうのはし',x:34,z:0,r:4.2,lvl:'tower',text:'生誕のファサードの2本の鐘塔を結ぶ、高さ65mの橋。目の前に塔の頂のモザイク、足下にバルセロナの碁盤目の街アシャンプラ、遠くには地中海とモンジュイックの丘が見えます。',meta:[['高さ','65m'],['帰り','南の塔の螺旋階段で下りる（エレベーターでも可）']]},
+  {id:'espiral',era:'nk',name:'螺旋階段',kana:'らせんかいだん',x:34,z:7,r:2.6,lvl:'tower',text:'鐘塔の中の、巻き貝のような螺旋階段。中心が吹き抜けになっていて、のぞき込むと渦のように見えます。羽板のすき間から、ときどき街が見えます。',meta:[['ひとこと','走ると早く下りられる']]},
+];
+let GOT={}; try{ GOT=JSON.parse(localStorage.getItem('sagrada_fuda')||'{}'); }catch(e){}
+function saveGot(){ try{ localStorage.setItem('sagrada_fuda',JSON.stringify(GOT)); }catch(e){} }
+const spotOn=s=>eraOn(s.era);
+
+/* ============================================================
+   UI
+   ============================================================ */
+const ui={area:$('area'),eye:$('eyebrow'),poi:$('poi'),poiName:$('poiName'),hint:$('hint'),card:$('card')};
+const ERANAME={'26':'1926年（ガウディ没年）',n:'現在（2026年）',k:'完成予想'};
+function lvlOf(x,y,z){ if(y<-2) return 'B1'; if(y>12) return 'tower'; if(ERA!=='26'&&inBasilica(x,z)) return 'in'; return 'out'; }
+function areaName(){ const lv=lvlOf(P.x,P.y,P.z), x=P.x, z=P.z, y=P.y;
+  if(lv==='B1') return inR(CRY,x,z)||z<CRY.z0?'地下聖堂（クリプタ）':'地下聖堂への通路';
+  if(lv==='tower'){ if(Math.abs(z)<4.7&&Math.abs(x-34)<1.2) return '生誕の塔の橋（65m）'; if(Math.hypot(x-SPIRAL.x,z-SPIRAL.z)<3) return `螺旋階段（${Math.round(y)}m）`; return '鐘塔の中'; }
+  if(lv==='in'){ if(Math.abs(x)<15&&Math.abs(z)<15) return '交差部'; if(z>15) return Math.abs(x)<7.5?'身廊':'側廊'; if(z<-15) return '後陣'; return x>0?'翼廊（生誕の側）':'翼廊（受難の側）'; }
+  if(Math.hypot(x-LIFT.x,z-LIFT.z)<2.7) return '鐘塔の足元（エレベーター）'; if(Math.hypot(x-SPIRAL.x,z-SPIRAL.z)<2.7) return '螺旋階段の下';
+  if(inR(STAIR,x,z)) return '地下聖堂への階段';
+  if(Math.abs(x-GX)<BLK/2&&Math.abs(z-GZ)<BLK/2) return 'ガウディ広場'; if(Math.abs(x-SX)<BLK/2&&Math.abs(z-SZ)<BLK/2) return 'サグラダ・ファミリア広場';
+  if(Math.abs(x)<56.6&&z>-46.6&&z<66.6){ if(Math.hypot(x+43,z-47)<12) return '付属学校'; if(ERA==='26'&&z<-20&&x<-25) return 'ガウディの工房'; if(x>28) return '生誕のファサード前'; if(x<-28) return '受難のファサード前'; if(z>50) return '栄光のファサード前'; if(z<-15) return '後陣のまわり'; return ERA==='26'?'建設現場':'聖堂の敷地'; }
+  if(x>56.6&&x<76.7) return 'マリーナ通り'; if(x<-56.6&&x>-76.7) return 'サルデーニャ通り'; if(z>66.6&&z<86.7) return 'マジョルカ通り'; if(z<-46.6&&z>-66.7) return 'プロベンサ通り'; return 'アシャンプラ地区'; }
+function updFuda(){ const L=SPOTS.filter(spotOn); const n=L.filter(s=>GOT[s.id]).length; $('fudaN').textContent=`見どころ札 ${n} / ${L.length}（全時代 ${SPOTS.filter(s=>GOT[s.id]).length} / ${SPOTS.length}）`; }
+let hintT=0; function say(who,text,sec){ ui.hint.innerHTML=(who?`<span class="who">${who}</span>`:'')+text; ui.hint.hidden=false; hintT=performance.now()+(sec||4.5)*1000; }
+let toastT=0; function toast(f,s){ $('toastF').textContent=f; $('toastS').textContent=s; $('toast').style.opacity=1; toastT=performance.now()+2600; }
+let curCard=-1;
+function visSpots(){ return SPOTS.map((s,i)=>i).filter(i=>spotOn(SPOTS[i])); }
+function openCard(i){ const s=SPOTS[i]; curCard=i; $('cKana').textContent=s.kana; $('cName').textContent=s.name; $('cText').textContent=s.text; $('cMeta').innerHTML=s.meta.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')+`<dt>札</dt><dd>${GOT[s.id]?'受け取り済み':'まだ（歩いて訪れると受け取れます）'}</dd>`; ui.card.hidden=false; }
+$('cardX').onclick=()=>{ ui.card.hidden=true; };
+$('cPrev').onclick=()=>{ const v=visSpots(); const k=v.indexOf(curCard); openCard(v[(k+v.length-1)%v.length]); }; $('cNext').onclick=()=>{ const v=visSpots(); const k=v.indexOf(curCard); openCard(v[(k+1)%v.length]); };
+let nearSpot=-1; ui.poi.onclick=()=>{ if(nearSpot>=0) openCard(nearSpot); };
+// メニュー
+const menu=$('menu'); $('menuBtn').onclick=()=>{ menu.hidden=!menu.hidden; $('menuBtn').setAttribute('aria-expanded',!menu.hidden); };
+function setEra(e){ ERA=e; for(const k in EG) EG[k].visible=eraOn(EG[k].userData.era); $('vEra').textContent={'26':'1926年',n:'現在',k:'完成予想'}[e]; ui.eye.textContent='サグラダ・ファミリア · '+ERANAME[e]; [...$('eraSeg').children].forEach(b=>b.classList.toggle('on',b.dataset.v===e)); for(const k in LVCAN) delete LVCAN[k];
+  if(e==='26'&&P.y>12){ warpTo(44,0,8,PI/2); say('','1926年には塔の橋はまだありません。地上に戻りました。',4); }
+  if(!START){ say(ERANAME[e],{'26':'ガウディが亡くなった年。完成していたのは地下聖堂、後陣の外壁、生誕のファサードと聖バルナバの塔だけ。まわりはまだ空き地が多い。',n:'2026年2月、イエス・キリストの塔が172.5mに。正面の栄光のファサードは工事中。',k:'栄光のファサードと4本の鐘塔が加わり、18本の塔がそろった姿（想像を含む）。'}[e],7); }
+  updFuda(); needRefl=2; }
+$('tEra').onclick=()=>setEra(ERA==='26'?'n':ERA==='n'?'k':'26');
+$('eraSeg').onclick=e=>{ if(e.target.dataset.v) setEra(e.target.dataset.v); };
+const TORDER=['asa','hiru','yu','yoru'];
+$('tTime').onclick=()=>{ TIME=TORDER[(TORDER.indexOf(TIME)+1)%4]; applyTime(); };
+$('timeSeg').onclick=e=>{ if(e.target.dataset.v){ TIME=e.target.dataset.v; applyTime(); } };
+$('tSnd').onclick=()=>{ SOUND=!SOUND; $('vSnd').textContent=SOUND?'あり':'なし'; SND.setOn(SOUND); };
+function setQual(q){ quality=q; $('vQual').textContent=q==='high'?'高':'軽'; applyPR(); renderer.setSize(innerWidth,innerHeight); const sh=q==='high'; if(renderer.shadowMap.enabled!==sh){ renderer.shadowMap.enabled=sh; scene.traverse(o=>{ if(o.material){ (Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m.needsUpdate=true); } }); } IL.A.distance=sh?36:0; }
+$('tQual').onclick=()=>setQual(quality==='high'?'low':'high');
+let PMODE=2; $('tPeople').onclick=()=>{ PMODE=(PMODE+2)%3; $('vPeople').textContent=['なし','少ない','多い'][PMODE]; };
+$('tStory').onclick=()=>{ menu.hidden=true; $('story').hidden=false; }; $('storyX').onclick=()=>{ $('story').hidden=true; };
+$('tHome').onclick=()=>{ warpTo(START_POS.x,0,START_POS.z,START_POS.yaw); menu.hidden=true; };
+let sens=1; const sensSeg=$('sensSeg'); function setSens(v){ sens=v; [...sensSeg.children].forEach(b=>b.classList.toggle('on',+b.dataset.v===v)); } sensSeg.onclick=e=>{ if(e.target.dataset.v) setSens(+e.target.dataset.v); }; setSens(1);
+const padSeg=$('padSeg'); function setPad(v){ $('pad').hidden=!v; [...padSeg.children].forEach(b=>b.classList.toggle('on',+b.dataset.v===v)); } padSeg.onclick=e=>{ if(e.target.dataset.v) setPad(+e.target.dataset.v); };
+const LVN={out:'屋外',in:'聖堂の中',B1:'地下聖堂',tower:'塔の上'};
+function renderSpots(){ const L=visSpots(); const n=L.filter(i=>GOT[SPOTS[i].id]).length; $('spSum').textContent=`この時代の札 ${n} / ${L.length}。名所まで歩いてたどり着くと札がもらえます。ほかの時代にしかない名所もあります。`+(n===L.length?' ——この時代の札をすべて集めました！':'');
+  $('spGrid').innerHTML=SPOTS.map((s,i)=>spotOn(s)?`<button class="sp-card" data-i="${i}"><div class="fd ${GOT[s.id]?'got':''}">${GOT[s.id]?s.name.replace(/——.*/,'').slice(0,8):'未'}</div><div><small>${LVN[s.lvl]}</small><b>${s.name}</b><span>${s.text}</span></div></button>`:'').join(''); }
+$('spotsBtn').onclick=()=>{ renderSpots(); $('spots').hidden=false; }; $('spotsX').onclick=()=>{ $('spots').hidden=true; };
+$('spGrid').onclick=e=>{ const b=e.target.closest('.sp-card'); if(!b) return; $('spots').hidden=true; openCard(+b.dataset.i); };
+
+/* ---------- 地図 ---------- */
+const MAPB={out:{x0:-210,x1:210,z0:-200,z1:220},in:{x0:-40,x1:46,z0:-46,z1:62},B1:{x0:-36,x1:18,z0:-48,z1:-6},tower:{x0:18,x1:50,z0:-24,z1:24}};
+const LVLS=[['out','街と広場'],['in','聖堂の中'],['B1','地下聖堂'],['tower','塔の上']];
+const LVCAN={};
+function drawLevel(lv){ const B=MAPB[lv]; const W=540, H=Math.round(W*(B.z1-B.z0)/(B.x1-B.x0)); const c=makeCanvas(W,H),g=c.getContext('2d'); const sx=W/(B.x1-B.x0); const X=x=>(x-B.x0)*sx, Z=z=>(z-B.z0)*sx;
+  g.fillStyle='#2a2a2c'; g.fillRect(0,0,W,H);
+  const oct=(cx,cz,r,fill)=>{ g.fillStyle=fill; g.beginPath(); for(let k=0;k<8;k++){ const a=k/8*TAU+PI/8; const rr=r/.924; k?g.lineTo(X(cx+Math.cos(a)*rr),Z(cz+Math.sin(a)*rr)):g.moveTo(X(cx+Math.cos(a)*rr),Z(cz+Math.sin(a)*rr)); } g.closePath(); g.fill(); };
+  const foot=(fill)=>{ g.fillStyle=fill; g.fillRect(X(NAVE.x0),Z(NAVE.z0),45*sx,37*sx); g.fillRect(X(TRANS.x0),Z(TRANS.z0),60*sx,30*sx); g.fillRect(X(-22),Z(-20),44*sx,5*sx); g.beginPath(); g.arc(X(0),Z(-20),22*sx,PI,TAU); g.fill(); };
+  if(lv==='out'){ for(const b of CITY){ if(ERA==='26'&&!b.old){ oct(b.cx,b.cz,BLK/2,'#3a3630'); continue; } oct(b.cx,b.cz,BLK/2,'#5a5248'); oct(b.cx,b.cz,BLK/2-22,'#3e3a34'); }
+    oct(GX,GZ,BLK/2,ERA==='26'?'#4a4434':'#3e5a34'); oct(SX,SZ,BLK/2,ERA==='26'?'#4a4434':'#3e5a34'); oct(0,10,BLK/2,'#6a6458');
+    if(ERA!=='26'){ g.fillStyle='#3a7aa0'; g.beginPath(); g.ellipse(X(POND.x),Z(POND.z),POND.rx*sx,POND.rz*sx,0,0,TAU); g.fill(); }
+    foot(ERA==='26'?'#8a7a64':'#d8c8a8'); if(ERA==='26'){ g.fillStyle='#d8c8a8'; g.beginPath(); g.arc(X(0),Z(-20),22*sx,PI,TAU); g.fill(); g.fillRect(X(30),Z(-21),9*sx,42*sx); }
+    g.fillStyle='#f0a050'; for(const t of TOWERS){ if(ERA==='26'&&t.kind!=='N') continue; if(ERA==='n'&&t.kind==='G') continue; g.beginPath(); g.arc(X(t.x),Z(t.z),Math.max(2,t.r0*sx),0,TAU); g.fill(); }
+    if(ERA!=='26'){ g.fillStyle='#e8d070'; for(const e of EV){ g.beginPath(); g.arc(X(e.x),Z(e.z),5*sx,0,TAU); g.fill(); } g.fillStyle='#fff0a0'; g.beginPath(); g.arc(X(0),Z(0),10*sx,0,TAU); g.fill(); g.beginPath(); g.arc(X(0),Z(-22),6*sx,0,TAU); g.fill(); }
+    g.fillStyle='#b8a890'; g.font=`bold ${Math.round(11*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('マリーナ通り',X(66.6),Z(-120)); g.fillText('サルデーニャ通り',X(-66.6),Z(-120)); g.fillText('マジョルカ通り',X(-130),Z(80)); g.fillText('プロベンサ通り',X(-130),Z(-53)); }
+  else if(lv==='in'){ foot('#4a443c'); g.fillStyle='#c84a3a'; for(const c of COLS){ g.fillStyle={porphyry:'#c84a3a',basalt:'#6a6a70',granite:'#a8a49c',sandCol:'#d8c098'}[c.mat]; g.beginPath(); g.arc(X(c.x),Z(c.z),Math.max(2,c.R*sx),0,TAU); g.fill(); }
+    g.fillStyle='rgba(122,90,58,.6)'; for(const s of [-1,1]){ g.fillRect(X(Math.min(s*1.3,s*6.6)),Z(18.6),5.3*sx,32.2*sx); g.fillRect(X(Math.min(s*8.8,s*13.9)),Z(18.6),5.1*sx,32.2*sx); g.fillRect(X(Math.min(s*17.7,s*28.3)),Z(-5.5),10.6*sx,4.3*sx); g.fillRect(X(Math.min(s*17.7,s*28.3)),Z(1.2),10.6*sx,4.3*sx); }
+    g.fillStyle='#e8c060'; g.fillRect(X(-5),Z(-19.5),10*sx,6*sx); g.fillStyle='#f0a050'; for(const T of [LIFT,SPIRAL]){ g.beginPath(); g.arc(X(T.x),Z(T.z),3*sx,0,TAU); g.fill(); }
+    g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(11*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('身廊',X(0),Z(58)); g.fillText('生誕の門',X(40),Z(0)); g.fillText('受難の門',X(-36),Z(-26)); g.fillText('後陣',X(0),Z(-44)); g.fillText('エレベーター',X(LIFT.x),Z(LIFT.z-4)); g.fillText('螺旋階段',X(SPIRAL.x),Z(SPIRAL.z+5)); }
+  else if(lv==='B1'){ g.fillStyle='#4a443c'; g.fillRect(X(CRY.x0),Z(CRY.z0),(CRY.x1-CRY.x0)*sx,(CRY.z1-CRY.z0)*sx); g.beginPath(); g.arc(X(0),Z(CRY.z0),10*sx,PI,TAU); g.fill(); g.fillRect(X(-29.5),Z(-34),16.5*sx,3.5*sx); g.fillStyle='rgba(240,160,80,.45)'; g.fillRect(X(STAIR.x0),Z(STAIR.z0),3*sx,(STAIR.z1-STAIR.z0)*sx);
+    g.fillStyle='#e8c060'; if(window.TOMB){ g.beginPath(); g.arc(X(TOMB.x),Z(TOMB.z),1.2*sx,0,TAU); g.fill(); } g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(12*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('ガウディの墓',X(TOMB.x),Z(TOMB.z-2.4)); g.fillText('階段（地上へ）',X(-28),Z(-16.5)); }
+  else { g.fillStyle='#4a443c'; for(const t of NT){ g.beginPath(); g.arc(X(34),Z(t.z),3.2*sx,0,TAU); g.fill(); } g.fillStyle='#8a7a64'; g.fillRect(X(33.1),Z(-4.6),1.8*sx,9.2*sx); g.fillStyle='#cfc2b0'; g.font=`bold ${Math.round(12*W/540)}px sans-serif`; g.textAlign='center'; g.fillText('橋（65m）',X(40),Z(0)); g.fillText('エレベーター',X(42),Z(-7)); g.fillText('螺旋階段',X(42),Z(7)); }
+  return {c,B,sx,W,H}; }
+let mapLv='out';
+function openMap(){ mapLv=lvlOf(P.x,P.y,P.z); $('map').hidden=false; drawMap(); }
+function drawMap(){ const key=mapLv+ERA; const L=LVCAN[key]||(LVCAN[key]=drawLevel(mapLv)); const cv=$('mapC'),fr=$('mapFrame'); fr.style.aspectRatio=`${L.W}/${L.H}`; cv.width=L.W; cv.height=L.H; cv.getContext('2d').drawImage(L.c,0,0);
+  $('lvTabs').innerHTML=LVLS.filter(([k])=>ERA!=='26'||(k!=='in'&&k!=='tower')).map(([k,n])=>`<button data-k="${k}" class="${k===mapLv?'on':''}">${n}</button>`).join('');
+  [...fr.querySelectorAll('.pin')].forEach(p=>p.remove());
+  SPOTS.forEach((s,i)=>{ if(s.lvl!==mapLv||!spotOn(s)) return; const b=document.createElement('button'); b.className='pin'; b.textContent=s.name; b.style.left=((s.x-L.B.x0)/(L.B.x1-L.B.x0)*100)+'%'; b.style.top=((s.z-L.B.z0)/(L.B.z1-L.B.z0)*100)+'%'; b.onclick=()=>warpSpot(i); fr.appendChild(b); });
+  const me=$('meDot'); if(lvlOf(P.x,P.y,P.z)===mapLv){ me.hidden=false; me.style.left=((P.x-L.B.x0)/(L.B.x1-L.B.x0)*100)+'%'; me.style.top=((P.z-L.B.z0)/(L.B.z1-L.B.z0)*100)+'%'; } else me.hidden=true;
+  $('spotList').innerHTML=SPOTS.map((s,i)=>s.lvl===mapLv&&spotOn(s)?`<button data-i="${i}"><b>${s.name}</b><small>${GOT[s.id]?'札 ✓':'札 未'}</small></button>`:'').join(''); }
+$('lvTabs').onclick=e=>{ if(e.target.dataset.k){ mapLv=e.target.dataset.k; drawMap(); } };
+$('spotList').onclick=e=>{ const b=e.target.closest('button'); if(b) warpSpot(+b.dataset.i); };
+$('mini').onclick=openMap; $('mapX').onclick=()=>{ $('map').hidden=true; };
+function warpTo(x,y,z,yaw){ LIFTA=null; document.body.classList.remove('lift'); P.x=x; P.z=z; P.y=y; P.vy=0; if(yaw!=null) P.yaw=yaw; P.y=Math.max(surfaceAt(x,z,y+.3),y); }
+const WARPAT={ike:[104,0,22,PI/2],nacimiento:[50,0,0,PI/2],sotoo:[34,0,0,PI/2],pasion:[-54,0,0,-PI/2],gloria:[0,0,80,0],abside:[0,0,-56,PI],escoles:[-43,0,62,0],plaza:[-108,0,18,-PI/2],taller:[-40,0,-28,PI],nave:[0,0,44,0],crucero:[0,0,10,0],altar:[0,0,-6,0],este:[12,0,30,-PI/2],oeste:[-12,0,30,PI/2],cripta:[-8,-6.5,-24,PI*.5],puente:[34,65,-2,0],espiral:[34,65,3.6,0]};
+function warpSpot(i){ const s=SPOTS[i]; const w=WARPAT[s.id]; warpTo(w[0],w[1],w[2],w[3]); P.pitch=s.lvl==='in'?.25:.05; warpGuard=s.id; $('map').hidden=true; say('','移動しました。この場所の札は、いったん離れて歩いて訪れると受け取れます。',3.5); }
+// ミニマップ
+const miniC=$('miniC'), mg=miniC.getContext('2d');
+function drawMini(){ const lv=lvlOf(P.x,P.y,P.z); const key=lv+ERA; const L=LVCAN[key]||(LVCAN[key]=drawLevel(lv)); const W=216, scale={out:1.4,in:3.2,B1:4,tower:5}[lv]; const k=scale/L.sx;
+  mg.fillStyle='#1a1816'; mg.fillRect(0,0,W,W); mg.save(); mg.translate(W/2,W/2); mg.scale(k,k); mg.translate(-(P.x-L.B.x0)*L.sx,-(P.z-L.B.z0)*L.sx); mg.drawImage(L.c,0,0); mg.restore();
+  mg.fillStyle='#f08a3a'; for(const s of SPOTS){ if(s.lvl!==lv||!spotOn(s)) continue; const dx=(s.x-P.x)*scale+W/2, dz=(s.z-P.z)*scale+W/2; if(dx<0||dx>W||dz<0||dz>W) continue; mg.save(); mg.translate(dx,dz); mg.rotate(PI/4); mg.fillRect(-4,-4,8,8); mg.restore(); }
+  mg.save(); mg.translate(W/2,W/2); mg.rotate(-P.yaw); mg.fillStyle='#fff'; mg.beginPath(); mg.moveTo(0,-11); mg.lineTo(7,8); mg.lineTo(0,4); mg.lineTo(-7,8); mg.closePath(); mg.fill(); mg.restore(); }
+
+/* ============================================================
+   操作（パッド・キーボード・マウス）
+   ============================================================ */
+const IN={mx:0,mz:0,lx:0,ly:0,run:false,keys:{}};
+$('runBtn').onclick=()=>{ IN.run=!IN.run; $('runBtn').setAttribute('aria-pressed',IN.run); };
+$('levelBtn').onclick=()=>{ P.pitch=0; }; $('upBtn').onclick=()=>{ P.pitch=P.pitch>.8?0:1.05; };
+const sb=$('stickBase'),sk=$('stickKnob'),lb=$('lookBase'),lk=$('lookKnob');
+let stickId=null, lookId=null, dragId=null, sx0=0,sy0=0,lastX=0,lastY=0,downT=0,downX=0,downY=0,moved=false;
+function padCenter(el){ const r=el.getBoundingClientRect(); return [r.left+r.width/2,r.top+r.height/2]; }
+const cv=renderer.domElement;
+cv.addEventListener('pointerdown',e=>{ if(START) return; cv.setPointerCapture(e.pointerId); downT=performance.now(); downX=e.clientX; downY=e.clientY; moved=false;
+  const padOn=!$('pad').hidden; if(padOn){ const [cx,cy]=padCenter(sb); if(Math.hypot(e.clientX-cx,e.clientY-cy)<80&&stickId==null&&!LIFTA){ stickId=e.pointerId; sx0=cx; sy0=cy; sb.classList.add('on'); return; } const [lx,ly]=padCenter(lb); if(Math.hypot(e.clientX-lx,e.clientY-ly)<80&&lookId==null){ lookId=e.pointerId; lb.classList.add('on'); lastX=e.clientX; lastY=e.clientY; return; } }
+  if(dragId==null){ dragId=e.pointerId; lastX=e.clientX; lastY=e.clientY; } });
+cv.addEventListener('pointermove',e=>{ if(e.pointerId===stickId){ let dx=e.clientX-sx0,dy=e.clientY-sy0; const d=Math.hypot(dx,dy),m=48; if(d>m){ dx*=m/d; dy*=m/d; } sk.style.transform=`translate(${dx}px,${dy}px)`; IN.mx=dx/m; IN.mz=dy/m; return; }
+  if(e.pointerId===lookId){ const [lx,ly]=padCenter(lb); let dx=e.clientX-lx,dy=e.clientY-ly; const d=Math.hypot(dx,dy),m=48; if(d>m){ dx*=m/d; dy*=m/d; } lk.style.transform=`translate(${dx}px,${dy}px)`; IN.lx=dx/m; IN.ly=dy/m; return; }
+  if(e.pointerId===dragId){ const dx=e.clientX-lastX, dy=e.clientY-lastY; lastX=e.clientX; lastY=e.clientY; if(Math.hypot(e.clientX-downX,e.clientY-downY)>6) moved=true; const k=[.0026,.004,.006][sens]; P.yaw-=dx*k; P.pitch=Math.max(-1.3,Math.min(1.4,P.pitch-dy*k)); } });
+function upPtr(e){ if(e.pointerId===stickId){ stickId=null; sk.style.transform=''; IN.mx=IN.mz=0; sb.classList.remove('on'); }
+  else if(e.pointerId===lookId){ lookId=null; lk.style.transform=''; IN.lx=IN.ly=0; lb.classList.remove('on'); }
+  else if(e.pointerId===dragId){ dragId=null; if(!moved&&performance.now()-downT<350) tapAt(e.clientX,e.clientY); } }
+cv.addEventListener('pointerup',upPtr); cv.addEventListener('pointercancel',upPtr);
+addEventListener('keydown',e=>{ IN.keys[e.code]=true; if(e.code==='ShiftLeft') IN.run=true; if(e.code==='KeyE'&&!START&&!$('actBtn').hidden) $('actBtn').click(); }); addEventListener('keyup',e=>{ IN.keys[e.code]=false; if(e.code==='ShiftLeft') IN.run=$('runBtn').getAttribute('aria-pressed')==='true'; });
+const ray=new THREE.Raycaster();
+function isVis(o){ while(o){ if(!o.visible) return false; o=o.parent; } return true; }
+function tapAt(cx,cy){ ray.setFromCamera({x:cx/innerWidth*2-1,y:-cy/innerHeight*2+1},camera); ray.far=14;
+  const list=[]; TAPS.forEach(o=>{ if(isVis(o)) o.traverse(m=>{ if(m.isMesh) list.push(m); }); });
+  const hit=ray.intersectObjects(list,false)[0]; const ph=PMODE?ray.intersectObject(PIM,false)[0]:null;
+  if(hit&&(!ph||hit.distance<ph.distance)){ let o=hit.object; while(o&&!o.userData.tap) o=o.parent; if(!o) return; const t=o.userData.tap; t.i=(t.i==null?0:t.i+1)%t.lines.length; say(t.who,t.lines[t.i],6); SND.blip(); return; }
+  if(ph){ const L=LINES[ERA]||LINES.n; const pool=ERA==='k'?L.concat(LINES.n):L; const p=PEOPLE[ph.instanceId]; say(ERA==='26'?'1926年の人':(p&&p.inside?'見学の人':'通りの人'),pick(pool),5); SND.blip(); } }
+
+/* ============================================================
+   エレベーターと登塔の印
+   ============================================================ */
+const actBtn=$('actBtn'); let actKind=null;
+actBtn.onclick=()=>{ if(actKind==='up') startLift(LIFT.top); else if(actKind==='down') startLift(0); };
+function startLift(to){ LIFTA={t:0,dur:Math.abs(to-P.y)/9+1.2,y0:P.y,y1:to}; document.body.classList.add('lift'); actBtn.hidden=true; actKind=null; P.x=LIFT.x; P.z=LIFT.z; say('エレベーター',to>1?'生誕の塔を上っています……羽板のすき間から街が見えてきます。':'下りています……',3); SND.chime(); }
+let SEAL=null; try{ SEAL=localStorage.getItem('sagrada_seal'); }catch(e){}
+function showSeal(){ const d=new Date(); $('sealD').textContent=`${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} · 65m`; const s=$('seal'); s.classList.add('on'); SND.bell(.8); setTimeout(()=>s.classList.remove('on'),3200); if(!SEAL){ SEAL=String(Date.now()); try{ localStorage.setItem('sagrada_seal',SEAL); }catch(e){} } }
+
+/* ============================================================
+   音（WebAudio で合成）
+   ============================================================ */
+const SND=(function(){ let ac=null, master, cityG, cityF, padG, on=true; const S={};
+  function noiseBuf(){ const b=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate),d=b.getChannelData(0); let last=0; for(let i=0;i<d.length;i++){ const w=Math.random()*2-1; last=(last+.02*w)/1.02; d[i]=last*3.5; } return b; }
+  function whiteBuf(){ const b=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b; }
+  S.init=()=>{ if(ac) return; try{ ac=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; } master=ac.createGain(); master.gain.value=on?.85:0; master.connect(ac.destination);
+    const src=ac.createBufferSource(); src.buffer=noiseBuf(); src.loop=true; cityF=ac.createBiquadFilter(); cityF.type='lowpass'; cityF.frequency.value=420; cityG=ac.createGain(); cityG.gain.value=0; src.connect(cityF).connect(cityG).connect(master); src.start();
+    // 堂内の残響のような和音（オリジナルの穏やかな響き）
+    padG=ac.createGain(); padG.gain.value=0; const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1500; padG.connect(lp).connect(master);
+    S.pad=[]; for(const f of [130.8,196,261.6,329.6]){ const o=ac.createOscillator(); o.type='triangle'; o.frequency.value=f; const g=ac.createGain(); g.gain.value=.09; o.connect(g).connect(padG); o.start(); S.pad.push(o); }
+    const lfo=ac.createOscillator(); lfo.frequency.value=.12; const lg=ac.createGain(); lg.gain.value=.025; lfo.connect(lg).connect(padG.gain); lfo.start();
+    S.white=whiteBuf(); };
+  S.setOn=v=>{ on=v; if(master) master.gain.setTargetAtTime(v?.85:0,ac.currentTime,.1); };
+  S.update=(outdoor,inside,high,t)=>{ if(!ac) return; const T=ac.currentTime; cityG.gain.setTargetAtTime(outdoor?(high?.1:.22)*(ERA==='26'?.35:1):.035,T,.6); cityF.frequency.setTargetAtTime(high?260:420+60*Math.sin(t*.2),T,.5); padG.gain.setTargetAtTime(inside?.11:0,T,1.2);
+    if(S.pad&&Math.floor(t/9)!==S._ch){ S._ch=Math.floor(t/9); const ch=[[130.8,196,261.6,329.6],[146.8,220,293.7,370],[110,164.8,220,277.2],[123.5,185,246.9,311.1]][S._ch%4]; S.pad.forEach((o,i)=>o.frequency.setTargetAtTime(ch[i],T,1.5)); } };
+  // 鐘（倍音をずらした合成音）
+  S.bell=(vol,f0)=>{ if(!ac||!on) return; const T=ac.currentTime; f0=f0||R(260,340); for(const [m,a,d] of [[1,.35,5],[2.01,.2,3.4],[2.42,.18,2.6],[3.0,.12,2],[4.2,.08,1.4],[5.43,.05,1]]){ const o=ac.createOscillator(); o.type='sine'; o.frequency.value=f0*m; const g=ac.createGain(); g.gain.setValueAtTime(0,T); g.gain.linearRampToValueAtTime(a*vol,T+.01); g.gain.exponentialRampToValueAtTime(.0001,T+d); o.connect(g).connect(master); o.start(T); o.stop(T+d+.1); } };
+  S.bird=()=>{ if(!ac||!on) return; const T=ac.currentTime; for(let k=0;k<3;k++){ const o=ac.createOscillator(); o.type='sine'; const t0=T+k*.12; o.frequency.setValueAtTime(R(2800,3600),t0); o.frequency.exponentialRampToValueAtTime(R(1800,2400),t0+.08); const g=ac.createGain(); g.gain.setValueAtTime(0,t0); g.gain.linearRampToValueAtTime(.04,t0+.01); g.gain.exponentialRampToValueAtTime(.0001,t0+.09); o.connect(g).connect(master); o.start(t0); o.stop(t0+.1); } };
+  S.step=(inside)=>{ if(!ac||!on) return; const T=ac.currentTime; const s=ac.createBufferSource(); s.buffer=S.white; const bp=ac.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=inside?1400:900; bp.Q.value=1.4; const g=ac.createGain(); g.gain.setValueAtTime(inside?.1:.06,T); g.gain.exponentialRampToValueAtTime(.001,T+.07); s.connect(bp).connect(g).connect(master);
+    if(inside){ const dl=ac.createDelay(); dl.delayTime.value=.19; const fb=ac.createGain(); fb.gain.value=.42; const f=ac.createBiquadFilter(); f.type='lowpass'; f.frequency.value=1600; g.connect(dl).connect(f).connect(fb).connect(dl); f.connect(master); } s.start(T); s.stop(T+.09); };
+  S.chime=()=>{ if(!ac||!on) return; const T=ac.currentTime; [784,988,1175].forEach((f,i)=>{ const o=ac.createOscillator(); o.type='sine'; o.frequency.value=f; const g=ac.createGain(); g.gain.setValueAtTime(0,T+i*.11); g.gain.linearRampToValueAtTime(.12,T+i*.11+.01); g.gain.exponentialRampToValueAtTime(.001,T+i*.11+.9); o.connect(g).connect(master); o.start(T+i*.11); o.stop(T+i*.11+1); }); };
+  S.blip=()=>{ if(!ac||!on) return; const T=ac.currentTime; const o=ac.createOscillator(); o.type='sine'; o.frequency.value=660; const g=ac.createGain(); g.gain.setValueAtTime(.06,T); g.gain.exponentialRampToValueAtTime(.001,T+.12); o.connect(g).connect(master); o.start(T); o.stop(T+.14); };
+  return S; })();
+
+/* ============================================================
+   写真
+   ============================================================ */
+$('tPhoto').onclick=()=>{ menu.hidden=true; document.body.classList.add('photo'); $('photoUI').hidden=false; };
+$('photoX').onclick=()=>{ document.body.classList.remove('photo'); $('photoUI').hidden=true; };
+let wantShot=false; $('shutter').onclick=()=>{ wantShot=true; };
+$('shotX').onclick=()=>{ $('shot').hidden=true; };
+function stampShot(src){ const img=new Image(); img.onload=()=>{ const c=makeCanvas(img.width,img.height),g=c.getContext('2d'); g.drawImage(img,0,0); const s=Math.max(1,img.width/900); g.font=`bold ${Math.round(16*s)}px sans-serif`; g.textAlign='right'; g.fillStyle='rgba(0,0,0,.45)'; const tx='サグラダ・ファミリアさんぽ · '+areaName()+' · '+ERANAME[ERA]; const w=g.measureText(tx).width; g.fillRect(img.width-w-24*s,img.height-38*s,w+16*s,28*s); g.fillStyle='#fff'; g.fillText(tx,img.width-16*s,img.height-18*s); $('shotImg').src=c.toDataURL('image/jpeg',.92); $('shot').hidden=false; }; img.src=src; }
+
+/* ============================================================
+   メインループ
+   ============================================================ */
+let START=true, last=performance.now(), T0=performance.now(), stepAcc=0, bellT=25, birdT=6;
+const tmpV=new THREE.Vector3(), fwd=new THREE.Vector3(), _q=new THREE.Quaternion(), _m=new THREE.Matrix4(), _s=new THREE.Vector3();
+let firstIn=false, firstTower=false, firstCrypt=false;
+function step(dt,t){
+  let mx=IN.mx, mz=IN.mz; const K=IN.keys; if(K.KeyW||K.ArrowUp) mz=-1; if(K.KeyS||K.ArrowDown) mz=1; if(K.KeyA) mx=-1; if(K.KeyD) mx=1; if(K.ArrowLeft) P.yaw+=dt*1.8; if(K.ArrowRight) P.yaw-=dt*1.8;
+  P.yaw-=IN.lx*dt*[1.4,2.2,3.2][sens]; P.pitch=Math.max(-1.3,Math.min(1.4,P.pitch-IN.ly*dt*[1,1.6,2.4][sens]));
+  let moving=false;
+  if(LIFTA){ LIFTA.t+=dt; const k=Math.min(1,LIFTA.t/LIFTA.dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2; P.y=LIFTA.y0+(LIFTA.y1-LIFTA.y0)*e; P.vy=0; if(k>=1){ P.y=LIFTA.y1; LIFTA=null; document.body.classList.remove('lift'); if(P.y>60) say('','高さ65m。南（右手）の出口から、塔と塔を結ぶ橋へ出られます。',5); } }
+  else { const sp=(IN.run?4.8:2.2)*Math.min(1,Math.hypot(mx,mz));
+    if(sp>.01){ const a=Math.atan2(mx,mz)+P.yaw; const vx=Math.sin(a)*sp*dt, vz=Math.cos(a)*sp*dt; const n=Math.ceil(Math.hypot(vx,vz)/.2);
+      for(let i=0;i<n;i++){ const nx=P.x+vx/n, nz=P.z+vz/n; const ok=(x,z)=>!blocked(x,z,P.y)&&surfaceAt(x,z,P.y)>-1e8; if(ok(nx,P.z)){ P.x=nx; moving=true; } if(ok(P.x,nz)){ P.z=nz; moving=true; } } }
+    const BB=MAPB.out; P.x=Math.max(BB.x0-400,Math.min(BB.x1+400,P.x)); P.z=Math.max(BB.z0-400,Math.min(BB.z1+400,P.z));
+    const s=surfaceAt(P.x,P.z,P.y); if(s>P.y-.001){ P.y+=Math.min(s-P.y,dt*8+.02); P.vy=0; if(s-P.y<.03) P.y=s; } else { P.vy-=9.8*dt; P.y=Math.max(s,P.y+P.vy*dt); if(P.y===s) P.vy=0; } }
+  const lv=lvlOf(P.x,P.y,P.z), inside=lv==='in'||lv==='B1';
+  if(moving){ stepAcc+=dt*(IN.run?2.6:1.7); if(stepAcc>1){ stepAcc=0; SND.step(inside||lv==='tower'); } }
+  const bob=moving?Math.sin(t*(IN.run?11:7.5))*.035:0;
+  camera.position.set(P.x,P.y+1.6+bob,P.z); camera.rotation.set(P.pitch,P.yaw,0);
+  // 光：屋内では空の光を弱め、窓の色の光を強める
+  const T=TIMES[TIME]; const kin=inside?1:0; envK+=(kin-envK)*Math.min(1,dt*2.5);
+  hemi.intensity=T.hi*(1-envK*.62); sun.intensity=T.si*(renderer.shadowMap.enabled?1:(1-envK*.85)); amb.intensity=.08+envK*.05;
+  const nightIn=T.night?1:0;
+  IL.E.intensity=envK*(.4+T.bE*1.6)*(lv==='B1'?0:1); IL.W.intensity=envK*(.4+T.bW*1.6)*(lv==='B1'?0:1); IL.A.intensity=envK*(.6+nightIn*1.4)*(lv==='B1'?0:1); IL.C.intensity=lv==='B1'?2.2:0;
+  IL.E.position.set(18,12,Math.max(-10,Math.min(45,P.z))); IL.W.position.set(-18,12,Math.max(-10,Math.min(45,P.z)));
+  for(const m of BEAMS.E) m.opacity=T.bE*(m.map===TX.beam?.22:.55); for(const m of BEAMS.W) m.opacity=T.bW*(m.map===TX.beam?.22:.55); for(const m of BEAMS.A) m.opacity=T.bA*(m.map===TX.beam?.12:.35);
+  // 影のカメラは自分のまわりに
+  const d=window.SUND; sun.position.set(P.x+d.x*400,P.y+d.y*400,P.z+d.z*400); sun.target.position.set(P.x,P.y,P.z); sun.target.updateMatrixWorld();
+  renderer.shadowMap.needsUpdate=true;
+  // 人
+  const nOn=PMODE===2?PEOPLE.length:PMODE===1?55:0;
+  PEOPLE.forEach((p,i)=>{ let show=i<nOn&&!(p.inside&&ERA==='26')&&!(ERA==='26'&&i%3); if(!show){ _m.makeScale(0,0,0); PIM.setMatrixAt(i,_m); return; }
+    const dx=p.tx-p.x, dz=p.tz-p.z, dd=Math.hypot(dx,dz); let walking=false;
+    if(p.wait>0) p.wait-=dt; else if(dd<.3){ p.wait=p.look?R(3,9):R(.5,4); const z=p.zone; p.tx=R(z.x0,z.x1); p.tz=R(z.z0,z.z1); if(rnd()<.2){ const zs=p.inside?PZONES.in:PZONES.out; p.zone=zs[Math.floor(rnd()*zs.length)]; } }
+    else { const v=p.sp*dt; p.x+=dx/dd*Math.min(v,dd); p.z+=dz/dd*Math.min(v,dd); p.hd=Math.atan2(dx,dz); walking=true; }
+    const yb=walking?Math.abs(Math.sin(t*7+p.ph))*.04:0; _q.setFromAxisAngle(_up,p.hd||0); _m.compose(tmpV.set(p.x,yb,p.z),_q,_s.set(p.h,p.h,p.h)); PIM.setMatrixAt(i,_m); });
+  PIM.instanceMatrix.needsUpdate=true;
+  if(ERA!=='26'){ CARS.forEach((c,i)=>{ c.s+=c.v*dt; if(c.s>800) c.s=-800; if(c.s<-800) c.s=800; const x=c.alongX?c.s:c.c, z=c.alongX?c.c:c.s; _q.setFromAxisAngle(_up,c.alongX?(c.v>0?PI/2:-PI/2):(c.v>0?0:PI)); _m.compose(tmpV.set(x,0,z),_q,_s.set(1,1,1)); CIM.setMatrixAt(i,_m); }); CIM.instanceMatrix.needsUpdate=true; }
+  // 音
+  SND.update(lv==='out'||lv==='tower',lv==='in'||lv==='B1',lv==='tower',t);
+  bellT-=dt; if(bellT<=0){ bellT=R(40,80); if(lv!=='B1'&&ERA!=='26'){ const n=3; for(let k=0;k<n;k++) setTimeout(()=>SND.bell(lv==='tower'?.9:.45),k*1300); } }
+  birdT-=dt; if(birdT<=0){ birdT=R(4,12); if(lv==='out'&&TIME!=='yoru'&&(Math.abs(P.x)>70)) SND.bird(); }
+  // エレベーター・案内
+  if(!LIFTA&&ERA!=='26'){ const dl=Math.hypot(P.x-LIFT.x,P.z-LIFT.z); let k=null; if(dl<2.4&&P.y<3) k='up'; else if(dl<2.4&&P.y>60) k='down';
+    if(k!==actKind){ actKind=k; actBtn.hidden=!k; if(k) actBtn.textContent=k==='up'?'エレベーターで上る（65m）':'エレベーターで下りる'; } }
+  else if(!LIFTA&&actKind){ actKind=null; actBtn.hidden=true; }
+  if(!firstIn&&lv==='in'){ firstIn=true; say('','見上げてみよう——柱が枝分かれして、天井に光の森が広がっています（「見上げ」ボタン）。',7); }
+  if(!firstCrypt&&lv==='B1'){ firstCrypt=true; say('','地下聖堂。1882年、すべてはここから始まりました。北の奥の礼拝堂に、ガウディの墓があります。',7); }
+  if(lv==='tower'&&!firstTower&&Math.abs(P.z)<4.6&&Math.abs(P.x-34)<1.2&&P.y>64){ firstTower=true; showSeal(); }
+  // 見どころ・札
+  let ns=-1, nd=1e9; SPOTS.forEach((sp,i)=>{ if(sp.lvl!==lv||!spotOn(sp)) return; const dsp=Math.hypot(P.x-sp.x,P.z-sp.z); if(dsp<sp.r&&dsp<nd){ nd=dsp; ns=i; } if(warpGuard===sp.id&&dsp>sp.r+3) warpGuard=null;
+    if(dsp<sp.r*.8&&!GOT[sp.id]&&warpGuard!==sp.id){ GOT[sp.id]=1; saveGot(); updFuda(); toast(sp.name,'見どころ札を受け取った'); SND.chime(); } });
+  if(ns!==nearSpot){ nearSpot=ns; ui.poi.hidden=ns<0; if(ns>=0) ui.poiName.textContent=SPOTS[ns].name; }
+  const an=areaName(); if(ui.area.textContent!==an) ui.area.textContent=an;
+}
+let envK=0, miniT=0;
+function loop(now){ requestAnimationFrame(loop); const dt=Math.min(.05,(now-last)/1000); last=now; const t=(now-T0)/1000;
+  if(!START) step(dt,t); else { const a=t*.04; camera.position.set(150+Math.sin(a)*6,4+Math.sin(a*.7)*1.5,22+Math.cos(a)*10); camera.lookAt(30,58,0); const d=window.SUND; sun.position.set(60+d.x*400,d.y*400,d.z*400); sun.target.position.set(60,0,0); sun.target.updateMatrixWorld(); renderer.shadowMap.needsUpdate=true; }
+  if(needRefl>0){ needRefl--; if(needRefl===0) updateRefl(); }
+  sky.position.copy(camera.position);
+  renderer.render(scene,camera);
+  if(wantShot){ wantShot=false; try{ stampShot(renderer.domElement.toDataURL('image/jpeg',.92)); }catch(e){} }
+  if(!START){ miniT-=dt; if(miniT<=0){ miniT=.1; drawMini(); } if(hintT&&now>hintT){ ui.hint.hidden=true; hintT=0; } if(toastT&&now>toastT){ $('toast').style.opacity=0; toastT=0; } }
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+/* ---------- 開始 ---------- */
+renderer.shadowMap.autoUpdate=false;
+renderer.preserveDrawingBuffer=false;
+$('ctlText').textContent=isTouch?'左のパッドで移動、右のパッドか画面のドラッグで見回し。人をタップすると話します。':'WASD/矢印キーで移動、Shiftで走る、ドラッグで見回し。人をクリックすると話します。Eキーでエレベーター。';
+setEra('n'); applyTime(); updFuda(); setPad(isTouch?1:0);
+if(isTouch&&Math.min(screen.width,screen.height)<500) sun.shadow.mapSize.set(1536,1536);
+requestAnimationFrame(loop);
+$('load').hidden=true;
+$('goBtn').disabled=false; $('goBtn').textContent='ガウディ広場から歩く';
+$('goBtn').onclick=()=>{ START=false; $('start').hidden=true; SND.init(); SND.setOn(SOUND); warpTo(START_POS.x,0,START_POS.z,START_POS.yaw); P.pitch=.2; say('','池の向こうが生誕のファサード。西へ歩いて、マリーナ通りを渡ってみよう。',6); setTimeout(()=>SND.bell(.5),800); };
+
+</script>
+</body>
+</html>
