@@ -6,6 +6,13 @@
 <meta name="theme-color" content="#100e0c">
 <meta name="description" content="バルセロナのサグラダ・ファミリアを、スマホで歩いて巡る3D散策。ガウディ没年の1926年・現在・完成予想を切り替えられます。">
 <title>サグラダ・ファミリアさんぽ</title>
+<meta property="og:type" content="website">
+<meta property="og:title" content="サグラダ・ファミリアさんぽ">
+<meta property="og:description" content="ガウディの聖家族贖罪教会を、スマホで歩いて巡る3D散策。1926年・現在・完成予想を切り替え、塔の上や地下聖堂まで。">
+<meta property="og:url" content="https://32miya.github.io/32miya-sagrada-familia-sanpo/">
+<meta property="og:image" content="https://32miya.github.io/32miya-sagrada-familia-sanpo/img/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://32miya.github.io/32miya-sagrada-familia-sanpo/img/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap">
@@ -83,6 +90,11 @@ body.touchui #poi{bottom:calc(env(safe-area-inset-bottom,0px) + 234px);max-width
 body.touchui #actBtn{bottom:calc(env(safe-area-inset-bottom,0px) + 290px)}
 #toast{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:9;pointer-events:none;text-align:center;font-family:var(--f-disp);opacity:0;transition:opacity .5s}
 #toast .f{display:inline-block;writing-mode:vertical-rl;padding:18px 12px;background:#f0e4cc;color:#3a1608;border:3px double #a8501c;font-size:22px;font-weight:800;letter-spacing:.12em;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+body.imgfuda #toast .f{background:url(img/fuda.jpg) center/100% 100% no-repeat;border:0;padding:96px 26px 34px;min-height:150px}
+body.imgfuda .sp-card .fd.got{background:url(img/fuda.jpg) center/100% 100% no-repeat;border:0;padding-top:16px}
+#seal.img .in{background:rgba(244,234,214,.96) url(img/seal.png) center/100% 100% no-repeat;border:0}
+#seal.img .in>*{display:none}#seal.img .in>svg{display:block;position:absolute;inset:0}
+#seal .cap{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:10px;white-space:nowrap;font-family:var(--f-disp);font-weight:800;font-size:18px;color:#fff;text-shadow:0 2px 8px #000;letter-spacing:.2em}
 #toast small{display:block;margin-top:10px;font-size:12px;color:var(--ink);text-shadow:0 1px 6px #000;font-family:var(--f-body)}
 #seal{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%) scale(1.6) rotate(-8deg);z-index:10;pointer-events:none;opacity:0;transition:opacity .35s,transform .35s cubic-bezier(.2,1.6,.4,1)}
 #seal.on{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(-8deg)}
@@ -202,7 +214,7 @@ body.lift #pad .pbase#stickBase,body.lift #runBtn,body.lift #poi{display:none!im
 <div id="navBar" hidden><div class="t"><small>道案内</small><b id="navName"></b><span id="navDist"></span></div><button id="navX" aria-label="案内をやめる">×</button></div>
 <button id="actBtn" hidden></button>
 <div id="toast"><div class="f" id="toastF"></div><small id="toastS"></small></div>
-<div id="seal"><div class="in"><span>SAGRADA FAMÍLIA</span><i>✠</i><b>登塔の印</b><span id="sealD"></span></div></div>
+<div id="seal"><div class="cap">登塔の印</div><div class="in" style="position:relative"><span>SAGRADA FAMÍLIA</span><i>✠</i><b>登塔の印</b><span id="sealD"></span></div></div>
 
 <section id="card" hidden aria-live="polite">
   <button class="x" id="cardX" aria-label="閉じる">×</button>
@@ -1517,11 +1529,35 @@ for(const k of ['asa','hiru','yu','yoru']) loadImg('sky_'+k+'.jpg',t=>{ SKYIMG[k
 function applySkyImg(){ const t=SKYIMG[TIME]; if(t){ sky.material.map=t; sky.material.color.set(TIME==='yoru'?'#c8d0e0':'#ffffff'); CLOUDS.forEach(c=>c.visible=false); } else { sky.material.map=SKYT; sky.material.color.set('#ffffff'); CLOUDS.forEach(c=>c.visible=true); } sky.material.needsUpdate=true; }
 { const _apply=applyTime; applyTime=function(){ _apply(); applySkyImg(); }; }
 // 人物（切り抜いた立ち絵。いつもこちらを向く）
-const NPCIMG={'案内係':'npc_guide.png','教会の係員':'npc_attendant.png','墓守':'npc_caretaker.png'};
+const NPCIMG={'案内係':'npc_guide.png','教会の係員':'npc_attendant.png','墓守':'npc_caretaker.png','石工':'npc_mason1926.png','塔の係員':'npc_towerstaff.png'};
 for(const o of TAPS){ const f=NPCIMG[o.userData.tap.who]; if(!f) continue;
   loadImg(f,t=>{ const asp=t.image.width/t.image.height, h=1.74; const m=new THREE.Mesh(new THREE.PlaneGeometry(h*asp,h),new THREE.MeshLambertMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide}));
     m.position.y=h/2; o.children.forEach(ch=>ch.visible=false); o.add(m); o.rotation.y=0;
     m.onBeforeRender=(r,s,cam)=>{ m.rotation.y=Math.atan2(cam.position.x-o.position.x,cam.position.z-o.position.z); }; },{rep:false}); }
+
+// 札の台紙・登塔の印
+{ const im=new Image(); im.onload=()=>document.body.classList.add('imgfuda'); im.src='img/fuda.jpg'; }
+{ const im=new Image(); im.onload=()=>{ const sl=$('seal'); sl.classList.add('img'); const inn=sl.querySelector('.in');
+    const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.setAttribute('viewBox','0 0 168 168');
+    svg.innerHTML='<defs><path id="sealRing" d="M84,84 m-66,0 a66,66 0 1,1 132,0 a66,66 0 1,1 -132,0"/></defs><text font-size="10.5" font-weight="800" fill="#b8241c" letter-spacing="1.2" font-family="Shippori Mincho,serif"><textPath href="#sealRing" startOffset="2%" id="sealTxt"></textPath></text>';
+    inn.appendChild(svg); }; im.src='img/seal.png'; }
+{ const _show=showSeal; showSeal=function(){ _show(); const t=document.getElementById('sealTxt'); if(t) t.textContent='SAGRADA FAMÍLIA · 生誕の塔 65m · '+$('sealD').textContent.split(' ·')[0]+' ·'; }; }
+
+// 観光客の立ち絵（歩く人の一部をこの3人に。1926年は出さない）
+const TOURIMG=[['tourist_photo.png',1.64],['tourist_backpacker.png',1.78],['tourist_jp.png',1.72]];
+const SPR=[]; const SPRWHO=new Map();
+TOURIMG.forEach(([f,h],ti)=>loadImg(f,t=>{ const asp=t.image.width/t.image.height; const geo=new THREE.PlaneGeometry(h*asp,h); geo.translate(0,h/2,0);
+  const list=PEOPLE.filter(p=>p.i%5===ti+1); const im=new THREE.InstancedMesh(geo,new THREE.MeshLambertMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide}),list.length); im.frustumCulled=false; scene.add(im);
+  SPR.push({im,list}); SPRWHO.set(im,list); },{rep:false}));
+{ const _step=step, _m2=new THREE.Matrix4(), _q2=new THREE.Quaternion(), _p2=new THREE.Vector3(), _s2=new THREE.Vector3(), Z=new THREE.Matrix4().makeScale(0,0,0);
+  step=function(dt,t){ _step(dt,t); const on=ERA!=='26';
+    for(const S of SPR){ S.list.forEach((p,k)=>{ PIM.getMatrixAt(p.i,_m2); const vis=_m2.elements[0]!==0||_m2.elements[2]!==0;
+        if(on&&vis){ _m2.decompose(_p2,_q2,_s2); _q2.setFromAxisAngle(_up,Math.atan2(camera.position.x-_p2.x,camera.position.z-_p2.z)); _m2.compose(_p2,_q2,_s2.set(1,1,1)); S.im.setMatrixAt(k,_m2); PIM.setMatrixAt(p.i,Z); }
+        else S.im.setMatrixAt(k,Z); }); S.im.instanceMatrix.needsUpdate=true; }
+    if(SPR.length) PIM.instanceMatrix.needsUpdate=true; }; }
+// 立ち絵の観光客もタップで話す
+{ const _tap=tapAt; tapAt=function(cx,cy){ if(SPR.length&&PMODE){ ray.setFromCamera({x:cx/innerWidth*2-1,y:-cy/innerHeight*2+1},camera); ray.far=14; const hits=SPR.map(S=>ray.intersectObject(S.im,false)[0]).filter(Boolean).sort((a,b)=>a.distance-b.distance); const h=hits[0];
+    if(h&&ERA!=='26'){ const L=LINES[ERA]||LINES.n; say('見学の人',pick(ERA==='k'?L.concat(LINES.n):L),5); SND.blip(); return; } } _tap(cx,cy); }; }
 
 </script>
 <!-- sekai-portal:begin（世界さんぽ入口へ戻るボタン・各名所共通。このブロックごと </body> の直前に貼る） -->
