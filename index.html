@@ -1482,27 +1482,47 @@ signAt('26nk',-25.3,2.0,-44.6,PI,['地下聖堂 ⬇','ガウディの墓'],1.5,t
 signAt('nk',-23.6,2.0,-12.6,-PI/2,['地下聖堂へ ▶','外へ出て後陣の北西'],1.5,true);
 signAt('nk',40.5,2.2,4.8,PI/2,['入口 ▶','聖堂の中へ'],1.4,true);
 
+/* ============================================================
+   画像テクスチャ（img/ フォルダ）— 読み込めたものから順に差し替える。
+   読み込めない場合は、手続き生成のテクスチャのまま動く。
+   ============================================================ */
+const IMGL=new THREE.TextureLoader();
+function loadImg(file,fn,o){ o=o||{}; IMGL.load('img/'+file,t=>{ t.encoding=THREE.sRGBEncoding; t.anisotropy=Math.min(8,maxAniso); if(o.rep!==false){ t.wrapS=t.wrapT=THREE.RepeatWrapping; } if(o.r) t.repeat.set(o.r[0],o.r[1]); fn(t); },undefined,()=>{}); }
+function setMap(mats,t,col){ for(const m of mats){ if(!m) continue; m.map=t; if(m.emissiveMap!==undefined&&STONEMATS.includes(m)) m.emissiveMap=t; if(m===M.drip) m.bumpMap=t; if(col) m.color.set(col); m.needsUpdate=true; } }
+// 石
+loadImg('stone_nativity.jpg',t=>setMap([M.drip,M.old,M.oldD],t));
+loadImg('stone_new.jpg',t=>{ setMap([M.sand,M.sandD],t); const t2=t.clone(); t2.needsUpdate=true; t2.repeat.set(.5,.5); setMap([M.sandL,M.wallIn],t2,'#fff6ea'); },{r:[.5,.5]});
+loadImg('trencadis_white.jpg',t=>setMap([M.trenc],t));
+loadImg('mosaic_pinnacle.jpg',t=>setMap([M.mosN,M.mosP],t),{r:[2,3]});
+// 天井
+loadImg('vault.jpg',t=>{ M.vault.map=t; M.vault.emissiveMap=t; M.vault.needsUpdate=true; });
+// 柱
+loadImg('col_porphyry.jpg',t=>setMap([M.porphyry],t));
+loadImg('col_basalt.jpg',t=>setMap([M.basalt],t,'#d8d8dc'));
+loadImg('col_granite.jpg',t=>setMap([M.granite],t));
+loadImg('col_sandstone.jpg',t=>setMap([M.sandCol],t));
+// 歩道・街の建物
+loadImg('panot.jpg',t=>setMap([M.panot],t),{r:[3,3]});
+loadImg('facade_eixample.jpg',t=>{ const tints=['#ffffff','#f6e6dc','#e6ecee','#fff0d6']; M.facs.forEach((m,i)=>{ m.map=t; m.color.set(tints[i]); m.needsUpdate=true; });
+  // 夜の窓の明かりを、画像の窓の位置に合わせて描き直す
+  const W=256,H=256,c=makeCanvas(W,H),g=c.getContext('2d'); g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  for(const cx of [.165,.5,.835]) for(const [y0,y1] of [[.1,.44],[.56,.9]]){ if(rnd()<.45){ g.fillStyle=pick(['#ffcc80','#ffe0a0','#ffd090','#ffe8c0']); g.fillRect((cx-.065)*W,y0*H,.13*W,(y1-y0)*H); } }
+  M.facLit.map=toTex(c); M.facLit.needsUpdate=true; });
+// ステンドグラス（内側の明るい面と、外側の夜ににじむ面）
+for(const [k,f] of [['gE','glass_east.jpg'],['gW','glass_west.jpg'],['gA','glass_apse.jpg'],['gS','glass_south.jpg']])
+  loadImg(f,t=>{ GLASSM[k].map=t; GLASSM[k].needsUpdate=true; M['o'+k].emissiveMap=t; M['o'+k].needsUpdate=true; },{rep:false});
+// 空（時刻ごとのパノラマ）
+const SKYIMG={};
+for(const k of ['asa','hiru','yu','yoru']) loadImg('sky_'+k+'.jpg',t=>{ SKYIMG[k]=t; if(k===TIME) applySkyImg(); },{rep:false});
+function applySkyImg(){ const t=SKYIMG[TIME]; if(t){ sky.material.map=t; sky.material.color.set(TIME==='yoru'?'#c8d0e0':'#ffffff'); CLOUDS.forEach(c=>c.visible=false); } else { sky.material.map=SKYT; sky.material.color.set('#ffffff'); CLOUDS.forEach(c=>c.visible=true); } sky.material.needsUpdate=true; }
+{ const _apply=applyTime; applyTime=function(){ _apply(); applySkyImg(); }; }
+// 人物（切り抜いた立ち絵。いつもこちらを向く）
+const NPCIMG={'案内係':'npc_guide.png','教会の係員':'npc_attendant.png','墓守':'npc_caretaker.png'};
+for(const o of TAPS){ const f=NPCIMG[o.userData.tap.who]; if(!f) continue;
+  loadImg(f,t=>{ const asp=t.image.width/t.image.height, h=1.74; const m=new THREE.Mesh(new THREE.PlaneGeometry(h*asp,h),new THREE.MeshLambertMaterial({map:t,alphaTest:.5,side:THREE.DoubleSide}));
+    m.position.y=h/2; o.children.forEach(ch=>ch.visible=false); o.add(m); o.rotation.y=0;
+    m.onBeforeRender=(r,s,cam)=>{ m.rotation.y=Math.atan2(cam.position.x-o.position.x,cam.position.z-o.position.z); }; },{rep:false}); }
+
 </script>
-<!-- sekai-portal:begin（世界さんぽ入口へ戻るボタン・各名所共通。このブロックごと </body> の直前に貼る） -->
-<style>
-.sekai-back{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin-top:2px;padding:9px 14px;border:1px solid rgba(201,163,92,.45);border-radius:10px;
-  color:#ece6da;text-decoration:none;font-size:13px;letter-spacing:.08em;background:rgba(12,15,20,.6)}
-.sekai-back::before{content:"‹";font-size:18px;line-height:0;margin-top:-2px}
-.sekai-back:active{transform:scale(.98)}
-#menu .sekai-back{align-self:stretch;justify-content:center;margin-top:0}
-</style>
-<script>
-(function(){
-  var DEFAULT_PORTAL = "https://32miya.github.io/sekai/";
-  var portal = DEFAULT_PORTAL;
-  try{ var v = localStorage.getItem("sekaiSanpo.portal"); if(v){ v = JSON.parse(v); if(/^https?:\/\//.test(v)) portal = v; } }catch(e){}
-  function make(){ var a=document.createElement("a"); a.className="sekai-back"; a.href=portal; a.textContent="世界さんぽへ戻る"; return a; }
-  var go = document.getElementById("goBtn");
-  if(go && go.parentNode) go.parentNode.insertBefore(make(), go.nextSibling);
-  var menu = document.getElementById("menu");
-  if(menu) menu.appendChild(make());
-})();
-</script>
-<!-- sekai-portal:end -->
 </body>
 </html>
